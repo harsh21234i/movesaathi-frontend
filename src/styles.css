@@ -1,0 +1,160 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #fff8eb, #eef6ff);
+  color: #18212f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  background: #ff7a18;
+  color: white;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid #d7deea;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+a {
+  color: #0b5fff;
+  text-decoration: none;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 2rem;
+  background: #162033;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nav-links a {
+  color: white;
+}
+
+.profile-card,
+.panel {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content {
+  padding: 2rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.ride-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.ride-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #f6f8fc;
+}
+
+.ride-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.auth-panel {
+  width: min(420px, 100%);
+}
+
+.auth-link {
+  text-align: center;
+}
+
+.chat-panel {
+  min-height: 70vh;
+}
+
+.chat-log {
+  display: grid;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.message {
+  max-width: 70%;
+  background: #eef3ff;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+}
+
+.message.mine {
+  justify-self: end;
+  background: #ffe8d1;
+}
+
+.chat-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-card {
+    flex-direction: column;
+  }
+}
