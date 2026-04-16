@@ -3,9 +3,11 @@ import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { fetchMyBookings } from "../api/bookings";
+import { EmptyState } from "../components/EmptyState";
 import { createBooking, fetchRides } from "../api/rides";
 import { RideList } from "../components/RideList";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationsContext";
 import type { PassengerBooking, Ride } from "../types";
 
 type RideFilters = {
@@ -42,6 +44,7 @@ function formatCompactDate(value: string) {
 export function PassengerDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { pushToast } = useNotifications();
   const [rides, setRides] = useState<Ride[]>([]);
   const [bookings, setBookings] = useState<PassengerBooking[]>([]);
   const [filters, setFilters] = useState<RideFilters>(initialFilters);
@@ -98,6 +101,27 @@ export function PassengerDashboardPage() {
   useEffect(() => {
     void loadBookings();
   }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void fetchMyBookings()
+        .then((nextBookings) => {
+          setBookings((current) => {
+            if (nextBookings.length > current.length) {
+              pushToast({
+                title: "Booking update",
+                description: "A new booking update was added to your passenger board.",
+                tone: "info",
+              });
+            }
+            return nextBookings;
+          });
+        })
+        .catch(() => undefined);
+    }, 25000);
+
+    return () => window.clearInterval(intervalId);
+  }, [pushToast]);
 
   const sortedRides = [...rides].sort((left, right) => {
     if (sortMode === "price-low") return left.price_per_seat - right.price_per_seat;
@@ -256,6 +280,9 @@ export function PassengerDashboardPage() {
                   <span className={`status-pill ${booking.status === "accepted" ? "success" : booking.status === "rejected" ? "warning" : "neutral-dark"}`}>
                     {booking.status}
                   </span>
+                  <Link className="ghost-button inline-link-button" to={`/bookings/${booking.id}`}>
+                    View detail
+                  </Link>
                   {booking.status === "accepted" ? (
                     <Link className="ghost-button inline-link-button" to={`/chat/${booking.id}`}>
                       Open chat
@@ -265,10 +292,12 @@ export function PassengerDashboardPage() {
               </article>
             ))}
             {!bookings.length ? (
-              <div className="empty-card">
-                <strong>No bookings yet.</strong>
-                <p>Use the ride marketplace to join your first trip. Accepted bookings unlock chat with the driver.</p>
-              </div>
+              <EmptyState
+                title="No bookings yet"
+                description="Use the ride marketplace to join your first trip. Accepted bookings unlock chat with the driver."
+                actionLabel="Explore rides"
+                actionTo="/"
+              />
             ) : null}
           </div>
         </div>
@@ -282,8 +311,13 @@ export function PassengerDashboardPage() {
             setJoiningRideId(rideId);
             try {
               const booking = await createBooking(rideId);
+              pushToast({
+                title: "Ride request sent",
+                description: "Your booking request is now waiting for a driver decision.",
+                tone: "success",
+              });
               await loadBookings();
-              navigate(`/chat/${booking.id}`);
+              navigate(`/bookings/${booking.id}`);
             } catch (bookingRequestError) {
               setBookingError(getErrorMessage(bookingRequestError, "Unable to join this ride."));
             } finally {

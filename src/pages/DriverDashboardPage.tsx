@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { fetchManagedBookings, updateBookingStatus } from "../api/bookings";
+import { EmptyState } from "../components/EmptyState";
 import { createRide, fetchMyRides } from "../api/rides";
 import { RideForm } from "../components/RideForm";
+import { useNotifications } from "../context/NotificationsContext";
 import type { DriverBooking, Ride } from "../types";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -24,6 +26,7 @@ function formatCompactDate(value: string) {
 }
 
 export function DriverDashboardPage() {
+  const { pushToast } = useNotifications();
   const [rides, setRides] = useState<Ride[]>([]);
   const [bookings, setBookings] = useState<DriverBooking[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +49,30 @@ export function DriverDashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void Promise.all([fetchMyRides(), fetchManagedBookings()])
+        .then(([nextRides, nextBookings]) => {
+          setBookings((current) => {
+            const nextPending = nextBookings.filter((booking) => booking.status === "pending").length;
+            const currentPending = current.filter((booking) => booking.status === "pending").length;
+            if (nextPending > currentPending) {
+              pushToast({
+                title: "New passenger request",
+                description: "A driver booking request needs your review.",
+                tone: "info",
+              });
+            }
+            return nextBookings;
+          });
+          setRides(nextRides);
+        })
+        .catch(() => undefined);
+    }, 25000);
+
+    return () => window.clearInterval(intervalId);
+  }, [pushToast]);
 
   const pendingBookings = bookings.filter((booking) => booking.status === "pending").length;
   const acceptedBookings = bookings.filter((booking) => booking.status === "accepted").length;
@@ -135,14 +162,20 @@ export function DriverDashboardPage() {
                   <span className={`status-pill ${ride.is_active ? "success" : "warning"}`}>
                     {ride.is_active ? "active" : "closed"}
                   </span>
+                  <Link className="ghost-button inline-link-button" to={`/rides/${ride.id}`}>
+                    View detail
+                  </Link>
+                  <Link className="ghost-button inline-link-button" to="/driver/rides">
+                    Manage
+                  </Link>
                 </div>
               </article>
             ))}
             {!rides.length ? (
-              <div className="empty-card">
-                <strong>No rides published yet.</strong>
-                <p>Use the publish panel to create your first driver-facing trip listing.</p>
-              </div>
+              <EmptyState
+                title="No rides published yet"
+                description="Use the publish panel to create your first driver-facing trip listing."
+              />
             ) : null}
           </div>
         </div>
@@ -177,6 +210,9 @@ export function DriverDashboardPage() {
                   <span className={`status-pill ${booking.status === "accepted" ? "success" : booking.status === "rejected" ? "warning" : "neutral-dark"}`}>
                     {booking.status}
                   </span>
+                  <Link className="ghost-button inline-link-button" to={`/bookings/${booking.id}`}>
+                    View booking
+                  </Link>
                   {booking.status === "pending" ? (
                     <div className="action-row">
                       <button
@@ -187,6 +223,11 @@ export function DriverDashboardPage() {
                           setRequestsError(null);
                           try {
                             await updateBookingStatus(booking.id, "accepted");
+                            pushToast({
+                              title: "Booking accepted",
+                              description: `${booking.passenger.full_name} can now move into chat and trip coordination.`,
+                              tone: "success",
+                            });
                             await loadDashboard();
                           } catch (updateError) {
                             setRequestsError(getErrorMessage(updateError, "Unable to accept booking."));
@@ -206,6 +247,11 @@ export function DriverDashboardPage() {
                           setRequestsError(null);
                           try {
                             await updateBookingStatus(booking.id, "rejected");
+                            pushToast({
+                              title: "Booking rejected",
+                              description: `${booking.passenger.full_name} was notified that this trip is no longer available.`,
+                              tone: "warning",
+                            });
                             await loadDashboard();
                           } catch (updateError) {
                             setRequestsError(getErrorMessage(updateError, "Unable to reject booking."));
@@ -228,10 +274,10 @@ export function DriverDashboardPage() {
               </article>
             ))}
             {!bookings.length ? (
-              <div className="empty-card">
-                <strong>No booking requests yet.</strong>
-                <p>Once passengers start requesting seats on your rides, they will appear here with approve and reject actions.</p>
-              </div>
+              <EmptyState
+                title="No booking requests yet"
+                description="Once passengers start requesting seats on your rides, they will appear here with approve and reject actions."
+              />
             ) : null}
           </div>
         </div>

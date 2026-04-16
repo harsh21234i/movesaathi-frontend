@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+
+import { EmptyState } from "./EmptyState";
 import type { Ride } from "../types";
 
 type RideListProps = {
@@ -83,6 +86,9 @@ export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideLi
                 <span className={ride.available_seats <= 1 ? "status-pill warning" : "status-pill success"}>
                   {ride.available_seats <= 1 ? "Last seats" : "Open for booking"}
                 </span>
+                <Link className="ghost-button inline-link-button" to={`/rides/${ride.id}`}>
+                  View details
+                </Link>
                 <button
                   className="primary-button"
                   disabled={joiningRideId === ride.id || isOwnRide}
@@ -93,7 +99,7 @@ export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideLi
                   }
                   onClick={() => void onJoin(ride.id)}
                 >
-                  {isOwnRide ? "Your ride" : joiningRideId === ride.id ? "Joining..." : "Join ride"}
+                  {isOwnRide ? "Your ride" : joiningRideId === ride.id ? "Joining..." : "Request seat"}
                 </button>
               </div>
             </article>
@@ -101,10 +107,10 @@ export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideLi
         })}
 
         {!rides.length ? (
-          <div className="empty-card" role="status" aria-live="polite">
-            <strong>No rides match these filters.</strong>
-            <p>Try widening the route search, changing the departure date, or publish a new trip from the driver panel.</p>
-          </div>
+          <EmptyState
+            title="No rides match these filters"
+            description="Try widening the route search, changing the departure date, or browse again later."
+          />
         ) : null}
       </div>
     </section>

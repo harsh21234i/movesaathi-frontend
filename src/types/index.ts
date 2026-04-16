@@ -33,6 +33,16 @@ export type ResendVerificationResponse = {
   verification_token?: string | null;
 };
 
+export type UserSummary = {
+  id: number;
+  full_name: string;
+  email?: string;
+  phone_number?: string | null;
+  rating?: number;
+  role?: UserRole;
+  bio?: string | null;
+};
+
 export type Ride = {
   id: number;
   driver_id: number;
@@ -44,6 +54,13 @@ export type Ride = {
   vehicle_details?: string | null;
   notes?: string | null;
   is_active: boolean;
+};
+
+export type RideDetail = Ride & {
+  driver: UserSummary;
+  booked_passengers: number;
+  passengers: BookingPassengerSummary[];
+  booking_id?: number | null;
 };
 
 export type Booking = {
@@ -81,6 +98,17 @@ export type DriverBooking = Booking & {
   passenger: BookingPassengerSummary;
 };
 
+export type BookingDetail = Booking & {
+  ride: RideDetail;
+  driver: UserSummary;
+  passenger: UserSummary;
+  status_events: Array<{
+    label: string;
+    tone: "done" | "current" | "upcoming";
+    timestamp?: string;
+  }>;
+};
+
 export type Message = {
   id: number;
   booking_id: number;
@@ -88,4 +116,13 @@ export type Message = {
   content: string;
   message_type: string;
   created_at: string;
+};
+
+export type ToastTone = "success" | "info" | "warning" | "error";
+
+export type Toast = {
+  id: string;
+  title: string;
+  description?: string;
+  tone: ToastTone;
 };
