@@ -2,36 +2,111 @@ import type { Ride } from "../types";
 
 type RideListProps = {
   rides: Ride[];
+  joiningRideId: number | null;
+  currentUserId?: number;
   onJoin: (rideId: number) => Promise<void>;
 };
 
-export function RideList({ rides, onJoin }: RideListProps) {
+function formatDeparture(value: string) {
+  const date = new Date(value);
+  return {
+    day: date.toLocaleDateString([], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }),
+    time: date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+  };
+}
+
+export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideListProps) {
   return (
-    <div className="panel">
-      <span className="eyebrow">Passenger feed</span>
-      <h3>Available rides</h3>
-      <div className="ride-list">
-        {rides.map((ride) => (
-          <article key={ride.id} className="ride-card">
-            <div>
-              <strong>
-                {ride.origin} to {ride.destination}
-              </strong>
-              <p>{new Date(ride.departure_time).toLocaleString()}</p>
-              <p>
-                Rs. {ride.price_per_seat} | Seats: {ride.available_seats}
-              </p>
-              <p>{ride.vehicle_details || "Vehicle details will be shared after booking."}</p>
-            </div>
-            <div className="ride-actions">
-              <button className="primary-button" onClick={() => void onJoin(ride.id)}>
-                Join ride
-              </button>
-            </div>
-          </article>
-        ))}
-        {!rides.length ? <p>No rides found for the current search.</p> : null}
+    <section className="panel ride-feed-panel" aria-labelledby="ride-feed-title">
+      <div className="panel-header">
+        <div>
+          <span className="eyebrow">Passenger marketplace</span>
+          <h3 id="ride-feed-title">Available rides</h3>
+        </div>
+        <p>Browse active departures, compare seats and fares, and jump into chat after booking.</p>
       </div>
-    </div>
+
+      <div className="ride-list" aria-live="polite">
+        {rides.map((ride) => {
+          const departure = formatDeparture(ride.departure_time);
+          const isOwnRide = ride.driver_id === currentUserId;
+
+          return (
+            <article key={ride.id} className="ride-card" aria-label={`Ride from ${ride.origin} to ${ride.destination}`}>
+              <div className="ride-card-main">
+                <div className="ride-route">
+                  <div className="ride-stop">
+                    <span>From</span>
+                    <strong>{ride.origin}</strong>
+                  </div>
+                  <div className="ride-route-line" />
+                  <div className="ride-stop">
+                    <span>To</span>
+                    <strong>{ride.destination}</strong>
+                  </div>
+                </div>
+
+                <div className="ride-meta-grid">
+                  <div className="ride-meta">
+                    <span>Departure</span>
+                    <strong>{departure.day}</strong>
+                    <small>{departure.time}</small>
+                  </div>
+                  <div className="ride-meta">
+                    <span>Price</span>
+                    <strong>Rs. {ride.price_per_seat.toFixed(0)}</strong>
+                    <small>per seat</small>
+                  </div>
+                  <div className="ride-meta">
+                    <span>Seats</span>
+                    <strong>{ride.available_seats}</strong>
+                    <small>{ride.available_seats === 1 ? "seat left" : "seats open"}</small>
+                  </div>
+                </div>
+
+                <div className="ride-note-stack">
+                  <p className="ride-supporting-text">
+                    {ride.vehicle_details || "Vehicle details will be shared after the driver confirms the ride."}
+                  </p>
+                  {ride.notes ? <p className="ride-driver-note">{ride.notes}</p> : null}
+                </div>
+              </div>
+
+              <div className="ride-actions">
+                <span className={ride.available_seats <= 1 ? "status-pill warning" : "status-pill success"}>
+                  {ride.available_seats <= 1 ? "Last seats" : "Open for booking"}
+                </span>
+                <button
+                  className="primary-button"
+                  disabled={joiningRideId === ride.id || isOwnRide}
+                  aria-label={
+                    isOwnRide
+                      ? `This is your own ride from ${ride.origin} to ${ride.destination}`
+                      : `Join ride from ${ride.origin} to ${ride.destination}`
+                  }
+                  onClick={() => void onJoin(ride.id)}
+                >
+                  {isOwnRide ? "Your ride" : joiningRideId === ride.id ? "Joining..." : "Join ride"}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+
+        {!rides.length ? (
+          <div className="empty-card" role="status" aria-live="polite">
+            <strong>No rides match these filters.</strong>
+            <p>Try widening the route search, changing the departure date, or publish a new trip from the driver panel.</p>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }

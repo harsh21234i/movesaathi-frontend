@@ -1,7 +1,7 @@
 import { api } from "./client";
 import type { Booking, Ride } from "../types";
 
-export async function fetchRides(params: { origin?: string; destination?: string }) {
+export async function fetchRides(params: { origin?: string; destination?: string; departure_after?: string }) {
   const { data } = await api.get<Ride[]>("/rides", { params });
   return data;
 }
