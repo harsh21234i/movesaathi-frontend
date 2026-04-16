@@ -8,9 +8,10 @@ export function Layout() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div>
+        <div className="brand-block">
+          <span className="eyebrow">Operations cockpit</span>
           <h1>MooveSaathi</h1>
-          <p>Ride-sharing for reliable city-to-city travel.</p>
+          <p>Ride-sharing for reliable city-to-city travel with production-grade auth and recovery flows.</p>
         </div>
         <nav className="nav-links">
           <Link to="/">Dashboard</Link>
@@ -18,8 +19,11 @@ export function Layout() {
         <div className="profile-card">
           <strong>{user?.full_name}</strong>
           <span>{user?.email}</span>
+          <span>{user?.email_verified ? "Email verified" : "Email verification pending"}</span>
           <span>Rating: {user?.rating?.toFixed(1)}</span>
-          <button onClick={logout}>Logout</button>
+          <button className="ghost-button" onClick={() => void logout()}>
+            Logout
+          </button>
         </div>
       </aside>
       <main className="content">

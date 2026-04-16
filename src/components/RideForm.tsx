@@ -12,6 +12,7 @@ export function RideForm({ onSubmit }: RideFormProps) {
         event.currentTarget.reset();
       }}
     >
+      <span className="eyebrow">Driver console</span>
       <h3>Create ride</h3>
       <input name="origin" placeholder="Origin" required />
       <input name="destination" placeholder="Destination" required />
@@ -20,7 +21,9 @@ export function RideForm({ onSubmit }: RideFormProps) {
       <input name="price_per_seat" type="number" min="0" step="0.01" required />
       <input name="vehicle_details" placeholder="Vehicle details" />
       <textarea name="notes" placeholder="Ride notes" rows={3} />
-      <button type="submit">Publish ride</button>
+      <button className="primary-button" type="submit">
+        Publish ride
+      </button>
     </form>
   );
 }

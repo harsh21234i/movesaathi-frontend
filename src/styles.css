@@ -1,17 +1,52 @@
 :root {
   color-scheme: light;
-  font-family: "Segoe UI", sans-serif;
-  background: linear-gradient(135deg, #fff8eb, #eef6ff);
-  color: #18212f;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  --bg: #f3efe7;
+  --surface: rgba(255, 251, 245, 0.86);
+  --surface-strong: #fffdf9;
+  --ink: #1d2433;
+  --muted: #5d677a;
+  --line: rgba(35, 48, 74, 0.14);
+  --accent: #d9672f;
+  --accent-deep: #b84b1a;
+  --accent-soft: #fff0e7;
+  --success: #1f7a5a;
+  --success-soft: #e6f5ef;
+  --danger: #9d2f2f;
+  --danger-soft: #fbeaea;
+  --info: #2d5f9a;
+  --info-soft: #eaf3ff;
+  background:
+    radial-gradient(circle at top left, rgba(245, 164, 123, 0.28), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(72, 125, 198, 0.22), transparent 28%),
+    linear-gradient(135deg, #fbf6ee 0%, #edf3fb 100%);
+  color: var(--ink);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 70%);
+  pointer-events: none;
 }
 
 button,
@@ -20,41 +55,243 @@ textarea {
   font: inherit;
 }
 
+button,
+.primary-button,
+.ghost-button {
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+button:hover,
+.primary-button:hover,
+.ghost-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button,
 button {
   border: 0;
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  background: #ff7a18;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   color: white;
-  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(180, 75, 26, 0.18);
+}
+
+.primary-button:disabled,
+button:disabled,
+.ghost-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ghost-button {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
 }
 
 input,
 textarea {
   width: 100%;
-  border: 1px solid #d7deea;
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(217, 103, 47, 0.2);
+  border-color: rgba(217, 103, 47, 0.45);
 }
 
 a {
-  color: #0b5fff;
+  color: #1d5be3;
   text-decoration: none;
 }
 
-.app-shell {
-  display: grid;
-  grid-template-columns: 280px 1fr;
+p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.screen-state,
+.auth-page {
   min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.state-card,
+.auth-card,
+.panel,
+.profile-card {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px);
+  background: var(--surface);
+  box-shadow: 0 22px 50px rgba(24, 33, 47, 0.08);
+}
+
+.state-card {
+  width: min(480px, 100%);
+  border-radius: 28px;
+  padding: 2rem;
+}
+
+.auth-hero {
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: 1.2fr minmax(340px, 440px);
+  gap: 2rem;
+  align-items: center;
+}
+
+.auth-hero.single-column {
+  grid-template-columns: minmax(320px, 520px);
+  justify-content: center;
+}
+
+.auth-copy {
+  padding: 2rem;
+  animation: rise-in 420ms ease;
+}
+
+.auth-copy h2 {
+  margin: 0.75rem 0 1rem;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.03;
+  max-width: 12ch;
+}
+
+.auth-copy p {
+  max-width: 58ch;
+  color: var(--muted);
+}
+
+.auth-card {
+  width: 100%;
+  border-radius: 30px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: rise-in 420ms ease;
+}
+
+.auth-card-header h1 {
+  margin: 0.4rem 0 0.5rem;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.auth-card-header p,
+.auth-footer,
+.input-group small {
+  color: var(--muted);
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.input-group label {
+  font-weight: 700;
+}
+
+.form-alert {
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+.form-alert.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.form-alert.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.form-alert.info {
+  background: var(--info-soft);
+  color: var(--info);
+  word-break: break-word;
+}
+
+.auth-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.secondary-form {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
 }
 
 .sidebar {
+  position: relative;
+  overflow: hidden;
   padding: 2rem;
-  background: #162033;
+  background: linear-gradient(180deg, rgba(23, 31, 46, 0.96), rgba(28, 41, 65, 0.92));
   color: white;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -25% auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 103, 47, 0.28), transparent 70%);
+  pointer-events: none;
+}
+
+.brand-block,
+.nav-links,
+.profile-card {
+  position: relative;
+  z-index: 1;
+}
+
+.brand-block h1 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 2.2rem;
 }
 
 .nav-links {
@@ -65,25 +302,38 @@ a {
 
 .nav-links a {
   color: white;
-}
-
-.profile-card,
-.panel {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 20px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  opacity: 0.88;
 }
 
 .content {
   padding: 2rem;
 }
 
+.profile-card,
+.panel {
+  border-radius: 28px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
 .dashboard-grid {
   display: grid;
   gap: 1.25rem;
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.dashboard-grid > .panel:first-child {
+  grid-column: span 5;
+}
+
+.search-panel {
+  grid-column: span 3;
+}
+
+.dashboard-grid > .panel:last-child {
+  grid-column: span 4;
 }
 
 .ride-list {
@@ -96,51 +346,36 @@ a {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem;
-  border-radius: 16px;
-  background: #f6f8fc;
+  border-radius: 22px;
+  background: rgba(244, 246, 250, 0.88);
 }
 
 .ride-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.auth-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 2rem;
-}
-
-.auth-panel {
-  width: min(420px, 100%);
-}
-
-.auth-link {
-  text-align: center;
+  align-items: center;
 }
 
 .chat-panel {
-  min-height: 70vh;
+  min-height: 72vh;
 }
 
 .chat-log {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
   flex: 1;
 }
 
 .message {
-  max-width: 70%;
+  max-width: 72%;
+  border-radius: 18px 18px 18px 6px;
+  padding: 0.95rem 1rem;
   background: #eef3ff;
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
 }
 
 .message.mine {
   justify-self: end;
-  background: #ffe8d1;
+  border-radius: 18px 18px 6px 18px;
+  background: var(--accent-soft);
 }
 
 .chat-form {
@@ -149,12 +384,51 @@ a {
   gap: 0.75rem;
 }
 
-@media (max-width: 900px) {
-  .app-shell {
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1080px) {
+  .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid > .panel:first-child,
+  .dashboard-grid > .panel:last-child,
+  .search-panel {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell,
+  .auth-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .content,
+  .sidebar,
+  .auth-page {
+    padding: 1.25rem;
   }
 
   .ride-card {
     flex-direction: column;
+  }
+
+  .chat-form {
+    grid-template-columns: 1fr;
+  }
+
+  .message {
+    max-width: 100%;
   }
 }

@@ -5,8 +5,11 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { ChatPage } from "./pages/ChatPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 
 export default function App() {
   const { token } = useAuth();
@@ -15,6 +18,9 @@ export default function App() {
     <Routes>
       <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/register" element={token ? <Navigate to="/" replace /> : <RegisterPage />} />
+      <Route path="/forgot-password" element={token ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
+      <Route path="/reset-password" element={token ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
+      <Route path="/verify-email" element={token ? <Navigate to="/" replace /> : <VerifyEmailPage />} />
       <Route
         path="/"
         element={

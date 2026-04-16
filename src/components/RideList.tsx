@@ -8,6 +8,7 @@ type RideListProps = {
 export function RideList({ rides, onJoin }: RideListProps) {
   return (
     <div className="panel">
+      <span className="eyebrow">Passenger feed</span>
       <h3>Available rides</h3>
       <div className="ride-list">
         {rides.map((ride) => (
@@ -23,7 +24,9 @@ export function RideList({ rides, onJoin }: RideListProps) {
               <p>{ride.vehicle_details || "Vehicle details will be shared after booking."}</p>
             </div>
             <div className="ride-actions">
-              <button onClick={() => void onJoin(ride.id)}>Join ride</button>
+              <button className="primary-button" onClick={() => void onJoin(ride.id)}>
+                Join ride
+              </button>
             </div>
           </article>
         ))}
