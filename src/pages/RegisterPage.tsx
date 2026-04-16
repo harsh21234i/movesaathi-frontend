@@ -31,6 +31,7 @@ export function RegisterPage() {
           submitLabel="Create account"
           includeName
           includePhone
+          includeRole
           passwordHint="Use at least 8 characters with upper-case, lower-case, and a number."
           onSubmit={async (formData) => {
             try {
@@ -39,6 +40,7 @@ export function RegisterPage() {
                 email: String(formData.get("email")),
                 password: String(formData.get("password")),
                 phone_number: String(formData.get("phone_number") || ""),
+                role: String(formData.get("role") || "passenger") as "driver" | "passenger",
               });
               navigate("/verify-email", {
                 replace: true,

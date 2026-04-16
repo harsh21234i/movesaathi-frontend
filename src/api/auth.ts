@@ -4,6 +4,7 @@ import type {
   ForgotPasswordResponse,
   RegisterResponse,
   ResendVerificationResponse,
+  UserRole,
 } from "../types";
 
 export async function login(email: string, password: string) {
@@ -16,6 +17,7 @@ export async function register(payload: {
   email: string;
   password: string;
   phone_number?: string;
+  role: UserRole;
 }) {
   const { data } = await api.post("/auth/register", payload);
   return data as RegisterResponse;

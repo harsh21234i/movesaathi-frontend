@@ -27,9 +27,13 @@ export function Layout() {
       </a>
       <aside className="sidebar" aria-label="Sidebar">
         <div className="brand-block">
-          <span className="eyebrow">Shared mobility platform</span>
+          <span className="eyebrow">{user?.role === "driver" ? "Driver workspace" : "Passenger workspace"}</span>
           <h1>MooveSaathi</h1>
-          <p>Plan rides, publish seats, and move passengers from discovery to chat without friction.</p>
+          <p>
+            {user?.role === "driver"
+              ? "Publish rides, review booking requests, and keep coordination moving."
+              : "Discover routes, track your bookings, and jump into chat once a ride is confirmed."}
+          </p>
         </div>
 
         <div className="profile-card profile-card-highlight">
@@ -46,6 +50,7 @@ export function Layout() {
               {user?.email_verified ? "Verified account" : "Verification pending"}
             </span>
             <span className="status-pill neutral">Rating {user?.rating?.toFixed(1) ?? "New"}</span>
+            <span className="status-pill neutral">{user?.role === "driver" ? "Driver account" : "Passenger account"}</span>
           </div>
 
           <div className="profile-meta">
@@ -63,7 +68,7 @@ export function Layout() {
         <nav className="nav-links" aria-label="Primary">
           <Link className={isDashboard ? "nav-link active" : "nav-link"} to="/">
             <span>Dashboard</span>
-            <small>Ride board and publish flow</small>
+            <small>{user?.role === "driver" ? "Publish flow and booking management" : "Ride search and booking tracking"}</small>
           </Link>
         </nav>
 

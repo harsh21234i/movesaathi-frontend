@@ -6,6 +6,11 @@ export async function fetchRides(params: { origin?: string; destination?: string
   return data;
 }
 
+export async function fetchMyRides() {
+  const { data } = await api.get<Ride[]>("/rides/mine");
+  return data;
+}
+
 export async function createRide(payload: {
   origin: string;
   destination: string;

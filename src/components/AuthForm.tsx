@@ -7,6 +7,7 @@ type AuthFormProps = {
   onSubmit: (formData: FormData) => Promise<void>;
   includeName?: boolean;
   includePhone?: boolean;
+  includeRole?: boolean;
   passwordLabel?: string;
   passwordHint?: string;
   footer?: ReactNode;
@@ -19,6 +20,7 @@ export function AuthForm({
   onSubmit,
   includeName = false,
   includePhone = false,
+  includeRole = false,
   passwordLabel = "Password",
   passwordHint,
   footer,
@@ -52,6 +54,15 @@ export function AuthForm({
         {includeName ? <input name="full_name" placeholder="Full name" required /> : null}
         <input name="email" placeholder="Email address" type="email" required />
         {includePhone ? <input name="phone_number" placeholder="Phone number" /> : null}
+        {includeRole ? (
+          <div className="input-group">
+            <label htmlFor="role-field">I want to use MooveSaathi as</label>
+            <select id="role-field" name="role" defaultValue="passenger">
+              <option value="passenger">Passenger - discover and book rides</option>
+              <option value="driver">Driver - publish and manage rides</option>
+            </select>
+          </div>
+        ) : null}
         <div className="input-group">
           <label htmlFor="password-field">{passwordLabel}</label>
           <input id="password-field" name="password" placeholder={passwordLabel} type="password" required />

@@ -696,8 +696,41 @@ textarea {
   color: white;
 }
 
+.status-pill.neutral-dark {
+  background: rgba(24, 34, 49, 0.08);
+  color: var(--ink);
+}
+
 .dashboard-banner {
   margin-top: -0.25rem;
+}
+
+.booking-board {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.booking-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  background: rgba(245, 247, 252, 0.88);
+  border: 1px solid rgba(24, 34, 49, 0.06);
+}
+
+.booking-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.booking-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-end;
 }
 
 .chat-panel {
@@ -826,10 +859,21 @@ textarea {
   }
 
   .ride-actions .primary-button,
+  .booking-actions .primary-button,
+  .booking-actions .ghost-button,
   .ride-actions .status-pill,
+  .booking-actions .status-pill,
   .action-row > * {
     width: 100%;
     justify-content: center;
+  }
+
+  .booking-card {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-actions {
+    align-items: stretch;
   }
 }
 

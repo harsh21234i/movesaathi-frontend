@@ -1,8 +1,11 @@
+export type UserRole = "driver" | "passenger";
+
 export type User = {
   id: number;
   full_name: string;
   email: string;
   phone_number?: string | null;
+  role: UserRole;
   bio?: string | null;
   rating: number;
   email_verified: boolean;
@@ -50,6 +53,32 @@ export type Booking = {
   status: "pending" | "accepted" | "rejected";
   notes?: string | null;
   created_at: string;
+};
+
+export type BookingRideSummary = {
+  id: number;
+  origin: string;
+  destination: string;
+  departure_time: string;
+  price_per_seat: number;
+  available_seats: number;
+  vehicle_details?: string | null;
+};
+
+export type BookingPassengerSummary = {
+  id: number;
+  full_name: string;
+  email: string;
+  phone_number?: string | null;
+};
+
+export type PassengerBooking = Booking & {
+  ride: BookingRideSummary;
+};
+
+export type DriverBooking = Booking & {
+  ride: BookingRideSummary;
+  passenger: BookingPassengerSummary;
 };
 
 export type Message = {
