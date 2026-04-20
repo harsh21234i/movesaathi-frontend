@@ -13,3 +13,8 @@ export async function sendMessage(bookingId: number, content: string) {
   });
   return data;
 }
+
+export async function markMessagesSeen(bookingId: number) {
+  const { data } = await api.post<{ updated: number; message_ids: number[]; seen_at: string | null }>(`/chat/${bookingId}/seen`);
+  return data;
+}

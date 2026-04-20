@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getWebsocketBaseUrl } from "../api/client";
-import { fetchMessages, sendMessage } from "../api/chat";
+import { fetchMessages, markMessagesSeen, sendMessage } from "../api/chat";
 import { useNotifications } from "../context/NotificationsContext";
-import type { Message, User } from "../types";
+import type { ChatEvent, Message, User } from "../types";
 
 type BookingConversationProps = {
   bookingId: number;
@@ -43,21 +43,31 @@ function formatDeparture(value?: string) {
   });
 }
 
-export function BookingConversation({ bookingId, token, user, rideSummary, backTo = "/" }: BookingConversationProps) {
+export function BookingConversation({
+  bookingId,
+  token,
+  user,
+  rideSummary,
+  backTo = "/",
+}: BookingConversationProps) {
   const { pushToast } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isSocketReady, setIsSocketReady] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const typingTimer = useRef<number | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
   const wsUrl = token ? `${getWebsocketBaseUrl()}/${bookingId}?token=${token}` : null;
 
   useEffect(() => {
     void fetchMessages(bookingId)
-      .then(setMessages)
+      .then(async (loadedMessages) => {
+        setMessages(loadedMessages);
+        await markMessagesSeen(bookingId);
+      })
       .catch((loadError) => {
         setError(
           axios.isAxiosError(loadError)
@@ -73,6 +83,7 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
     }
 
     const socket = new WebSocket(wsUrl);
+    socketRef.current = socket;
 
     socket.onopen = () => {
       setIsSocketReady(true);
@@ -84,39 +95,110 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
 
     socket.onclose = () => {
       setIsSocketReady(false);
+      setIsPartnerTyping(false);
     };
 
     socket.onmessage = (event) => {
       try {
-        const parsed = JSON.parse(event.data) as Message;
-        setMessages((current) => {
-          if (current.some((message) => message.id === parsed.id)) {
-            return current;
-          }
-          return [...current, parsed];
-        });
+        const parsed = JSON.parse(event.data) as ChatEvent;
 
-        if (parsed.sender_id !== user?.id) {
-          pushToast({
-            title: "New chat message",
-            description: parsed.content,
-            tone: "info",
+        if (parsed.event_type === "message") {
+          const incomingMessage = parsed.message;
+          setMessages((current) => {
+            if (current.some((message) => message.id === incomingMessage.id)) {
+              return current;
+            }
+
+            return [...current, incomingMessage];
           });
+
+          if (incomingMessage.sender_id !== user?.id) {
+            void markMessagesSeen(bookingId);
+            pushToast({
+              title: "New chat message",
+              description: incomingMessage.content,
+              tone: "info",
+            });
+          }
+          setIsPartnerTyping(false);
+          return;
+        }
+
+        if (parsed.event_type === "typing") {
+          if (parsed.user_id !== user?.id) {
+            setIsPartnerTyping(parsed.is_typing);
+          }
+          return;
+        }
+
+        if (parsed.event_type === "seen") {
+          setMessages((current) =>
+            current.map((message) =>
+              parsed.message_ids.includes(message.id)
+                ? {
+                    ...message,
+                    seen_at: parsed.seen_at,
+                  }
+                : message,
+            ),
+          );
+          return;
         }
       } catch {
         return;
       }
     };
 
-    return () => socket.close();
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      socketRef.current = null;
+      socket.close();
+    };
   }, [bookingId, pushToast, token, user?.id, wsUrl]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  }, [messages, isPartnerTyping]);
 
-  const lastOwnMessageId = [...messages].reverse().find((message) => message.sender_id === user?.id)?.id;
+  function emitTyping(isTyping: boolean) {
+    const socket = socketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    socket.send(
+      JSON.stringify({
+        event_type: "typing",
+        is_typing: isTyping,
+      }),
+    );
+  }
+
+  function handleDraftChange(nextValue: string) {
+    setDraft(nextValue);
+    emitTyping(nextValue.trim().length > 0);
+
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (!nextValue.trim()) {
+      emitTyping(false);
+      return;
+    }
+
+    typingTimeoutRef.current = window.setTimeout(() => {
+      emitTyping(false);
+      typingTimeoutRef.current = null;
+    }, 1500);
+  }
+
   const departureLabel = formatDeparture(rideSummary?.departure_time);
+  const lastSeenOutgoingMessage = [...messages]
+    .reverse()
+    .find((message) => message.sender_id === user?.id && message.seen_at);
 
   return (
     <section className="panel chat-panel chat-thread" aria-labelledby="chat-page-title">
@@ -160,7 +242,6 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
         </div>
       ) : null}
 
-      {isTyping ? <div className="typing-indicator">Typing…</div> : null}
       {error ? (
         <div className="form-alert error" role="alert" aria-live="assertive">
           {error}
@@ -171,7 +252,6 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
         {messages.length ? (
           messages.map((message) => {
             const mine = message.sender_id === user?.id;
-            const statusLabel = mine && message.id === lastOwnMessageId && isSocketReady ? "Seen in live chat" : formatMessageTime(message.created_at);
 
             return (
               <div
@@ -181,7 +261,8 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
               >
                 <p>{message.content}</p>
                 <small>
-                  {mine ? "You" : "Trip partner"} | {statusLabel}
+                  {mine ? "You" : "Trip partner"} | {formatMessageTime(message.created_at)}
+                  {mine && message.seen_at ? " | Seen" : ""}
                 </small>
               </div>
             );
@@ -192,8 +273,19 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
             <p>Start with pickup time, exact landmark, or a quick confirmation so the other person knows the trip is active.</p>
           </div>
         )}
+        {isPartnerTyping ? (
+          <div className="typing-indicator" aria-live="polite">
+            Trip partner is typing...
+          </div>
+        ) : null}
         <div ref={messagesEndRef} />
       </div>
+
+      {lastSeenOutgoingMessage?.seen_at ? (
+        <p className="subtle-text" aria-live="polite">
+          Last seen {formatMessageTime(lastSeenOutgoingMessage.seen_at)}
+        </p>
+      ) : null}
 
       <form
         className="chat-form"
@@ -209,7 +301,7 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
           try {
             await sendMessage(bookingId, draft);
             setDraft("");
-            setIsTyping(false);
+            emitTyping(false);
           } catch (sendError) {
             setError(
               axios.isAxiosError(sendError)
@@ -226,18 +318,8 @@ export function BookingConversation({ bookingId, token, user, rideSummary, backT
           <textarea
             id="chat-message"
             value={draft}
-            onChange={(event) => {
-              setDraft(event.target.value);
-              setIsTyping(event.target.value.trim().length > 0);
-
-              if (typingTimer.current) {
-                window.clearTimeout(typingTimer.current);
-              }
-
-              typingTimer.current = window.setTimeout(() => {
-                setIsTyping(false);
-              }, 1200);
-            }}
+            onChange={(event) => handleDraftChange(event.target.value)}
+            onBlur={() => emitTyping(false)}
             placeholder="Write a clear message about pickup point, timing, or passenger coordination."
             rows={3}
           />

@@ -116,7 +116,27 @@ export type Message = {
   content: string;
   message_type: string;
   created_at: string;
+  seen_at?: string | null;
 };
+
+export type ChatEvent =
+  | {
+      event_type: "message";
+      message: Message;
+    }
+  | {
+      event_type: "typing";
+      booking_id: number;
+      user_id: number;
+      is_typing: boolean;
+    }
+  | {
+      event_type: "seen";
+      booking_id: number;
+      user_id: number;
+      message_ids: number[];
+      seen_at: string;
+    };
 
 export type ToastTone = "success" | "info" | "warning" | "error";
 
