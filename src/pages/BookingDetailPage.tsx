@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { fetchBookingDetail } from "../api/bookings";
 import { BookingConversation } from "../components/BookingConversation";
 import { EmptyState } from "../components/EmptyState";
+import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { StatusTimeline } from "../components/StatusTimeline";
 import { useAuth } from "../context/AuthContext";
 import type { BookingDetail } from "../types";
@@ -113,6 +114,9 @@ export function BookingDetailPage() {
             <h3>{booking.passenger.full_name}</h3>
             <p>{booking.passenger.email ?? "Passenger contact available in live booking flow."}</p>
           </div>
+          {booking.status === "accepted" ? (
+            <LiveLocationPanel rideId={booking.ride.id} canUpdate={user?.role === "driver" && booking.ride.driver_id === user.id} />
+          ) : null}
         </div>
       </div>
 

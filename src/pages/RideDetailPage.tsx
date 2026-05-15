@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { createBooking } from "../api/rides";
 import { fetchRideDetail } from "../api/rides";
 import { EmptyState } from "../components/EmptyState";
+import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { MapPreview } from "../components/MapPreview";
 import { RouteTimeline } from "../components/RouteTimeline";
 import { useAuth } from "../context/AuthContext";
@@ -129,7 +130,14 @@ export function RideDetailPage() {
 
       <div className="detail-grid">
         <div className="panel detail-map-panel">
-          <MapPreview origin={ride.origin} destination={ride.destination} />
+          <MapPreview
+            origin={ride.origin}
+            destination={ride.destination}
+            originLatitude={ride.origin_latitude}
+            originLongitude={ride.origin_longitude}
+            destinationLatitude={ride.destination_latitude}
+            destinationLongitude={ride.destination_longitude}
+          />
           <RouteTimeline origin={ride.origin} destination={ride.destination} departureTime={ride.departure_time} />
         </div>
 
@@ -162,6 +170,10 @@ export function RideDetailPage() {
             </div>
             {ride.notes ? <p>{ride.notes}</p> : <p>Pickup specifics and rider coordination can continue in chat once the request is accepted.</p>}
           </div>
+
+          {(isDriverView || hasExistingBooking) && (
+            <LiveLocationPanel rideId={ride.id} canUpdate={isDriverView} />
+          )}
         </div>
       </div>
     </section>

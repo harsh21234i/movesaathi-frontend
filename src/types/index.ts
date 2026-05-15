@@ -48,12 +48,17 @@ export type Ride = {
   driver_id: number;
   origin: string;
   destination: string;
+  origin_latitude?: number | null;
+  origin_longitude?: number | null;
+  destination_latitude?: number | null;
+  destination_longitude?: number | null;
   departure_time: string;
   available_seats: number;
   price_per_seat: number;
   vehicle_details?: string | null;
   notes?: string | null;
   is_active: boolean;
+  status?: "scheduled" | "full" | "in_progress" | "completed" | "cancelled";
 };
 
 export type RideDetail = Ride & {
@@ -117,6 +122,17 @@ export type Message = {
   message_type: string;
   created_at: string;
   seen_at?: string | null;
+};
+
+export type RideLocation = {
+  id: number;
+  ride_id: number;
+  driver_id: number;
+  latitude: number;
+  longitude: number;
+  heading?: number | null;
+  speed_kmph?: number | null;
+  created_at: string;
 };
 
 export type ChatEvent =

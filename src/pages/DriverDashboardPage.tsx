@@ -25,6 +25,11 @@ function formatCompactDate(value: string) {
   });
 }
 
+function optionalCoordinate(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "").trim();
+  return value ? Number(value) : null;
+}
+
 export function DriverDashboardPage() {
   const { pushToast } = useNotifications();
   const [rides, setRides] = useState<Ride[]>([]);
@@ -118,6 +123,10 @@ export function DriverDashboardPage() {
               await createRide({
                 origin: String(formData.get("origin")),
                 destination: String(formData.get("destination")),
+                origin_latitude: optionalCoordinate(formData, "origin_latitude"),
+                origin_longitude: optionalCoordinate(formData, "origin_longitude"),
+                destination_latitude: optionalCoordinate(formData, "destination_latitude"),
+                destination_longitude: optionalCoordinate(formData, "destination_longitude"),
                 departure_time: new Date(String(formData.get("departure_time"))).toISOString(),
                 available_seats: Number(formData.get("available_seats")),
                 price_per_seat: Number(formData.get("price_per_seat")),

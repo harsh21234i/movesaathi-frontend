@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { cancelRide, fetchMyRides, updateRide } from "../api/rides";
 import { fetchManagedBookings } from "../api/bookings";
 import { EmptyState } from "../components/EmptyState";
+import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { RideForm } from "../components/RideForm";
 import { useNotifications } from "../context/NotificationsContext";
 import type { DriverBooking, Ride } from "../types";
@@ -14,6 +15,11 @@ function getErrorMessage(error: unknown, fallback: string) {
     return String(error.response?.data?.detail ?? fallback);
   }
   return fallback;
+}
+
+function optionalCoordinate(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "").trim();
+  return value ? Number(value) : null;
 }
 
 export function DriverRideManagementPage() {
@@ -142,6 +148,10 @@ export function DriverRideManagementPage() {
                   await updateRide(selectedRide.id, {
                     origin: String(formData.get("origin")),
                     destination: String(formData.get("destination")),
+                    origin_latitude: optionalCoordinate(formData, "origin_latitude"),
+                    origin_longitude: optionalCoordinate(formData, "origin_longitude"),
+                    destination_latitude: optionalCoordinate(formData, "destination_latitude"),
+                    destination_longitude: optionalCoordinate(formData, "destination_longitude"),
                     departure_time: new Date(String(formData.get("departure_time"))).toISOString(),
                     available_seats: Number(formData.get("available_seats")),
                     price_per_seat: Number(formData.get("price_per_seat")),
@@ -156,6 +166,8 @@ export function DriverRideManagementPage() {
                   await loadData();
                 }}
               />
+
+              <LiveLocationPanel rideId={selectedRide.id} canUpdate />
 
               <div className="panel detail-info-card">
                 <span className="eyebrow">Passengers</span>

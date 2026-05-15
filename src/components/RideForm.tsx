@@ -3,6 +3,10 @@ import { useState } from "react";
 type RideDraft = {
   origin?: string;
   destination?: string;
+  origin_latitude?: number | null;
+  origin_longitude?: number | null;
+  destination_latitude?: number | null;
+  destination_longitude?: number | null;
   departure_time?: string;
   available_seats?: number;
   price_per_seat?: number;
@@ -83,6 +87,64 @@ export function RideForm({
         <div className="input-group">
           <label htmlFor="destination">Destination</label>
           <input id="destination" name="destination" autoComplete="address-level2" placeholder="Delhi" defaultValue={initialValues?.destination ?? ""} required />
+        </div>
+      </div>
+
+      <div className="inline-grid two-column">
+        <div className="input-group">
+          <label htmlFor="origin_latitude">Origin latitude</label>
+          <input
+            id="origin_latitude"
+            name="origin_latitude"
+            type="number"
+            min="-90"
+            max="90"
+            step="0.000001"
+            placeholder="18.5204"
+            defaultValue={initialValues?.origin_latitude ?? ""}
+          />
+        </div>
+        <div className="input-group">
+          <label htmlFor="origin_longitude">Origin longitude</label>
+          <input
+            id="origin_longitude"
+            name="origin_longitude"
+            type="number"
+            min="-180"
+            max="180"
+            step="0.000001"
+            placeholder="73.8567"
+            defaultValue={initialValues?.origin_longitude ?? ""}
+          />
+        </div>
+      </div>
+
+      <div className="inline-grid two-column">
+        <div className="input-group">
+          <label htmlFor="destination_latitude">Destination latitude</label>
+          <input
+            id="destination_latitude"
+            name="destination_latitude"
+            type="number"
+            min="-90"
+            max="90"
+            step="0.000001"
+            placeholder="19.0760"
+            defaultValue={initialValues?.destination_latitude ?? ""}
+          />
+        </div>
+        <div className="input-group">
+          <label htmlFor="destination_longitude">Destination longitude</label>
+          <input
+            id="destination_longitude"
+            name="destination_longitude"
+            type="number"
+            min="-180"
+            max="180"
+            step="0.000001"
+            placeholder="72.8777"
+            defaultValue={initialValues?.destination_longitude ?? ""}
+          />
         </div>
       </div>
 
