@@ -3,6 +3,7 @@ import type {
   AuthTokens,
   ForgotPasswordResponse,
   RegisterResponse,
+  SessionList,
   ResendVerificationResponse,
   UserRole,
 } from "../types";
@@ -48,4 +49,13 @@ export async function verifyEmail(token: string) {
 export async function resendVerification(email: string) {
   const { data } = await api.post("/auth/resend-verification", { email });
   return data as ResendVerificationResponse;
+}
+
+export async function fetchSessions() {
+  const { data } = await api.get<SessionList>("/auth/sessions");
+  return data;
+}
+
+export async function revokeSession(sessionJti: string) {
+  await api.delete(`/auth/sessions/${sessionJti}`);
 }

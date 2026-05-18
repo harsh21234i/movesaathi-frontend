@@ -9,11 +9,14 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { DriverRideManagementPage } from "./pages/DriverRideManagementPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { PassengerTripsPage } from "./pages/PassengerTripsPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { SessionsPage } from "./pages/SessionsPage";
 import { RideDetailPage } from "./pages/RideDetailPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
+import { OperationsPage } from "./pages/OperationsPage";
 
 export default function App() {
   const { token } = useAuth();
@@ -39,6 +42,9 @@ export default function App() {
         <Route path="chat/:bookingId" element={<ChatPage />} />
         <Route path="driver/rides" element={<DriverRideManagementPage />} />
         <Route path="trips" element={<PassengerTripsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="sessions" element={<SessionsPage />} />
+        <Route path="ops" element={<OperationsPage />} />
       </Route>
     </Routes>
   );

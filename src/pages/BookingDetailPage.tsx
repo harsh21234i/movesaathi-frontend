@@ -3,18 +3,27 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { fetchBookingDetail } from "../api/bookings";
+import { createPayment, confirmPayment, fetchBookingPayment } from "../api/payments";
+import { createReview } from "../api/reviews";
 import { BookingConversation } from "../components/BookingConversation";
 import { EmptyState } from "../components/EmptyState";
 import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { StatusTimeline } from "../components/StatusTimeline";
 import { useAuth } from "../context/AuthContext";
 import type { BookingDetail } from "../types";
+import type { Payment } from "../types";
 
 export function BookingDetailPage() {
   const { bookingId } = useParams();
   const { token, user } = useAuth();
   const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [payment, setPayment] = useState<Payment | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!bookingId || !user) {
@@ -33,6 +42,25 @@ export function BookingDetailPage() {
         );
       });
   }, [bookingId, user]);
+
+  useEffect(() => {
+    if (!bookingId || !booking) {
+      return;
+    }
+
+    setPaymentError(null);
+    void fetchBookingPayment(Number(bookingId)).then(setPayment).catch((loadError) => {
+      if (axios.isAxiosError(loadError) && loadError.response?.status === 404) {
+        setPayment(null);
+        return;
+      }
+      setPaymentError(
+        axios.isAxiosError(loadError)
+          ? String(loadError.response?.data?.detail ?? "Unable to load payment details.")
+          : "Unable to load payment details.",
+      );
+    });
+  }, [bookingId, booking]);
 
   if (!bookingId) {
     return null;
@@ -101,6 +129,72 @@ export function BookingDetailPage() {
             <span className="eyebrow">Status timeline</span>
             <StatusTimeline items={booking.status_events} />
           </div>
+
+          <div className="panel detail-info-card">
+            <span className="eyebrow">Payment</span>
+            {paymentError ? (
+              <div className="form-alert error" role="alert">
+                {paymentError}
+              </div>
+            ) : null}
+            {payment ? (
+              <>
+                <div className="detail-metric-grid">
+                  <div>
+                    <small>Amount</small>
+                    <strong>
+                      {payment.currency} {payment.amount.toFixed(0)}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>Status</small>
+                    <strong>{payment.status}</strong>
+                  </div>
+                  <div>
+                    <small>Provider</small>
+                    <strong>{payment.provider}</strong>
+                  </div>
+                </div>
+                <div className="action-row">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    disabled={isConfirmingPayment}
+                    onClick={async () => {
+                      setIsConfirmingPayment(true);
+                      try {
+                        setPayment(await confirmPayment(payment.id));
+                      } finally {
+                        setIsConfirmingPayment(false);
+                      }
+                    }}
+                  >
+                    {isConfirmingPayment ? "Confirming..." : "Confirm payment"}
+                  </button>
+                </div>
+              </>
+            ) : booking.status !== "rejected" ? (
+              <div className="action-row">
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={isCreatingPayment}
+                  onClick={async () => {
+                    setIsCreatingPayment(true);
+                    try {
+                      setPayment(await createPayment({ booking_id: booking.id }));
+                    } finally {
+                      setIsCreatingPayment(false);
+                    }
+                  }}
+                >
+                  {isCreatingPayment ? "Creating..." : "Create payment"}
+                </button>
+              </div>
+            ) : (
+              <p>This booking was rejected, so no payment flow is available.</p>
+            )}
+          </div>
         </div>
 
         <div className="detail-side-column">
@@ -132,6 +226,67 @@ export function BookingDetailPage() {
           price_per_seat: booking.ride.price_per_seat,
         }}
       />
+
+      {booking.status === "completed" ? (
+        <div className="panel detail-info-card">
+          <span className="eyebrow">Review</span>
+          <h3>Rate the other trip participant</h3>
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setReviewError(null);
+              const formData = new FormData(event.currentTarget);
+              const rating = Number(formData.get("rating"));
+              const comment = String(formData.get("comment") || "").trim() || null;
+              const revieweeId = user?.role === "driver" ? booking.passenger.id : booking.driver.id;
+
+              setIsSubmittingReview(true);
+              try {
+                await createReview({
+                  booking_id: booking.id,
+                  reviewee_id: revieweeId,
+                  rating,
+                  comment,
+                });
+                event.currentTarget.reset();
+              } catch (submitError) {
+                setReviewError(
+                  axios.isAxiosError(submitError)
+                    ? String(submitError.response?.data?.detail ?? "Unable to submit review.")
+                    : "Unable to submit review.",
+                );
+              } finally {
+                setIsSubmittingReview(false);
+              }
+            }}
+          >
+            <div className="inline-grid two-column">
+              <div className="input-group">
+                <label htmlFor="rating">Rating</label>
+                <select id="rating" name="rating" defaultValue="5" required>
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                  <option value="2">2</option>
+                  <option value="1">1</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label htmlFor="comment">Comment</label>
+                <input id="comment" name="comment" placeholder="Smooth ride and clear communication." />
+              </div>
+            </div>
+            {reviewError ? (
+              <div className="form-alert error" role="alert">
+                {reviewError}
+              </div>
+            ) : null}
+            <button className="primary-button" type="submit" disabled={isSubmittingReview}>
+              {isSubmittingReview ? "Submitting..." : "Submit review"}
+            </button>
+          </form>
+        </div>
+      ) : null}
     </section>
   );
 }

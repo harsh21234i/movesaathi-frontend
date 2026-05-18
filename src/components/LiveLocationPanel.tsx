@@ -1,8 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-import { fetchLatestRideLocation, updateRideLocation } from "../api/rides";
-import type { RideLocation } from "../types";
+import { fetchLatestRideLocation, fetchRideLocationAccess, fetchRideLocationHistory, updateRideLocation } from "../api/rides";
+import type { RideLocation, RideLocationAccess } from "../types";
 import { EmptyState } from "./EmptyState";
 
 type LiveLocationPanelProps = {
@@ -33,6 +33,8 @@ function numberValue(formData: FormData, key: string) {
 
 export function LiveLocationPanel({ rideId, canUpdate = false }: LiveLocationPanelProps) {
   const [location, setLocation] = useState<RideLocation | null>(null);
+  const [locationAccess, setLocationAccess] = useState<RideLocationAccess | null>(null);
+  const [history, setHistory] = useState<RideLocation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,10 +43,23 @@ export function LiveLocationPanel({ rideId, canUpdate = false }: LiveLocationPan
     setIsLoading(true);
     setError(null);
     try {
-      setLocation(await fetchLatestRideLocation(rideId));
+      const access = await fetchRideLocationAccess(rideId);
+      setLocationAccess(access);
+      if (!access.can_track) {
+        setLocation(null);
+        setHistory([]);
+        return;
+      }
+      const [latest, rideHistory] = await Promise.all([
+        fetchLatestRideLocation(rideId),
+        fetchRideLocationHistory(rideId, 5),
+      ]);
+      setLocation(latest);
+      setHistory(rideHistory);
     } catch (loadError) {
       if (axios.isAxiosError(loadError) && loadError.response?.status === 404) {
         setLocation(null);
+        setHistory([]);
       } else {
         setError(getErrorMessage(loadError, "Unable to load latest ride location."));
       }
@@ -94,6 +109,15 @@ export function LiveLocationPanel({ rideId, canUpdate = false }: LiveLocationPan
 
       {isLoading ? <p>Checking latest location from backend.</p> : null}
 
+      {!isLoading && locationAccess ? (
+        <div className="profile-tags">
+          <span className={`status-pill ${locationAccess.can_track ? "success" : "warning"}`}>
+            {locationAccess.can_track ? "tracking available" : "tracking blocked"}
+          </span>
+          {locationAccess.reason ? <span className="status-pill neutral-dark">{locationAccess.reason}</span> : null}
+        </div>
+      ) : null}
+
       {!isLoading && location ? (
         <>
           <div className="location-map" aria-label={`Latest location ${location.latitude}, ${location.longitude}`}>
@@ -117,15 +141,42 @@ export function LiveLocationPanel({ rideId, canUpdate = false }: LiveLocationPan
               <small>Updated</small>
               <strong>{formatUpdatedAt(location.created_at)}</strong>
             </div>
+            <div>
+              <small>Age</small>
+              <strong>{location.age_seconds}s</strong>
+            </div>
           </div>
           <div className="profile-tags">
             {location.speed_kmph != null ? <span className="status-pill neutral-dark">{location.speed_kmph.toFixed(0)} km/h</span> : null}
             {location.heading != null ? <span className="status-pill neutral-dark">{location.heading.toFixed(0)} deg heading</span> : null}
+            <span className={`status-pill ${location.is_stale ? "warning" : "success"}`}>{location.is_stale ? "stale" : "fresh"}</span>
           </div>
+          {history.length ? (
+            <div className="booking-board">
+              {history.map((point) => (
+                <article key={point.id} className="booking-card">
+                  <div>
+                    <strong>
+                      {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                    </strong>
+                    <p>{formatUpdatedAt(point.created_at)}</p>
+                  </div>
+                  <span className={`status-pill ${point.is_stale ? "warning" : "success"}`}>{point.is_stale ? "stale" : "live"}</span>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </>
       ) : null}
 
-      {!isLoading && !location ? (
+      {!isLoading && !location && locationAccess ? (
+        <EmptyState
+          title="Tracking not available"
+          description={locationAccess.reason || "Location access is currently blocked for this ride."}
+        />
+      ) : null}
+
+      {!isLoading && !location && !locationAccess ? (
         <EmptyState
           title="No location shared yet"
           description={canUpdate ? "Update your current position when the ride starts." : "The driver has not shared a live position for this ride yet."}

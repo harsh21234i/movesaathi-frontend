@@ -25,10 +25,14 @@ export function Layout() {
       ? [
           { to: "/", label: "Dashboard", description: "Driver overview and approvals" },
           { to: "/driver/rides", label: "Manage rides", description: "Edit routes and inspect passengers" },
+          { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
+          { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
         ]
       : [
           { to: "/", label: "Dashboard", description: "Ride discovery and booking feed" },
           { to: "/trips", label: "Trips", description: "Upcoming, pending, and completed rides" },
+          { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
+          { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
         ];
 
   return (
@@ -86,6 +90,13 @@ export function Layout() {
               </Link>
             );
           })}
+        </nav>
+
+        <nav className="nav-links" aria-label="System">
+          <Link className={location.pathname.startsWith("/ops") ? "nav-link active" : "nav-link"} to="/ops">
+            <span>System</span>
+            <small>Deployment, jobs, support, and audit tools</small>
+          </Link>
         </nav>
 
         <div className="sidebar-note">

@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Ride, RideDetail, RideLocation, User, UserRole } from "../types";
+import type { Ride, RideDetail, RideLocation, RideLocationAccess, User, UserRole } from "../types";
 
 export type RidePayload = {
   origin: string;
@@ -63,5 +63,17 @@ export async function updateRideLocation(rideId: number, payload: RideLocationPa
 
 export async function fetchLatestRideLocation(rideId: number) {
   const { data } = await api.get<RideLocation>(`/rides/${rideId}/location/latest`);
+  return data;
+}
+
+export async function fetchRideLocationHistory(rideId: number, limit = 25) {
+  const { data } = await api.get<RideLocation[]>(`/rides/${rideId}/location/history`, {
+    params: { limit },
+  });
+  return data;
+}
+
+export async function fetchRideLocationAccess(rideId: number) {
+  const { data } = await api.get<RideLocationAccess>(`/rides/${rideId}/location/access`);
   return data;
 }
