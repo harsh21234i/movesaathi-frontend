@@ -25,3 +25,8 @@ export async function confirmPayment(paymentId: number) {
   const { data } = await api.post<Payment>(`/payments/${paymentId}/confirm`);
   return data;
 }
+
+export async function reconcilePayment(paymentId: number) {
+  const { data } = await api.post<Payment>(`/payments/${paymentId}/reconcile`);
+  return data;
+}
