@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 
 import { createRideDraftWithAI } from "../api/ai";
+import { AIResultMeta } from "./AIResultMeta";
 import { MapPreview } from "./MapPreview";
 
 type RideDraft = {
@@ -74,6 +75,7 @@ export function RideForm({
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiWarnings, setAiWarnings] = useState<string[]>([]);
+  const [aiMeta, setAiMeta] = useState<{ provider: string; model: string; usedFallback: boolean; confidence: number | null } | null>(null);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [originValue, setOriginValue] = useState(initialValues?.origin ?? "");
   const [destinationValue, setDestinationValue] = useState(initialValues?.destination ?? "");
@@ -332,6 +334,7 @@ export function RideForm({
             setAiPrompt("");
             setAiSummary(null);
             setAiWarnings([]);
+            setAiMeta(null);
             setOriginPoint(null);
             setDestinationPoint(null);
             setSuccess("Ride published. It is now visible in the live marketplace.");
@@ -384,6 +387,7 @@ export function RideForm({
               setSuccess(null);
               setAiSummary(null);
               setAiWarnings([]);
+              setAiMeta(null);
               try {
                 const response = await createRideDraftWithAI({ prompt: aiPrompt.trim() });
                 const { draft } = response;
@@ -409,6 +413,12 @@ export function RideForm({
                   setNotesValue(draft.notes);
                 }
                 setAiWarnings(draft.safety_notes);
+                setAiMeta({
+                  provider: response.provider,
+                  model: response.model,
+                  usedFallback: response.used_fallback,
+                  confidence: draft.confidence,
+                });
                 setAiSummary(
                   draft.missing_fields.length
                     ? `Draft applied with missing fields: ${draft.missing_fields.join(", ")}.`
@@ -430,22 +440,21 @@ export function RideForm({
               setAiPrompt("");
               setAiSummary(null);
               setAiWarnings([]);
+              setAiMeta(null);
             }}
           >
             Clear AI prompt
           </button>
         </div>
-        {aiSummary ? (
-          <div className="form-alert info" aria-live="polite">
-            {aiSummary}
-          </div>
-        ) : null}
-        {aiWarnings.length ? (
-          <ul className="ai-note-list" aria-label="AI safety notes">
-            {aiWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
+        {aiMeta ? (
+          <AIResultMeta
+            provider={aiMeta.provider}
+            model={aiMeta.model}
+            usedFallback={aiMeta.usedFallback}
+            confidence={aiMeta.confidence}
+            summary={aiSummary}
+            safetyNotes={aiWarnings}
+          />
         ) : null}
       </div>
 

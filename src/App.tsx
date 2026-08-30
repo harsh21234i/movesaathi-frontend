@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { AccountPage } from "./pages/AccountPage";
+import { AIHubPage } from "./pages/AIHubPage";
 import { BookingDetailPage } from "./pages/BookingDetailPage";
 import { ChatPage } from "./pages/ChatPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -43,6 +44,7 @@ export default function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="rides/:rideId" element={<RideDetailPage />} />
+        <Route path="ai" element={<AIHubPage />} />
         <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
         <Route path="chat/:bookingId" element={<ChatPage />} />
         <Route path="request-ride" element={<PassengerRequestPage />} />

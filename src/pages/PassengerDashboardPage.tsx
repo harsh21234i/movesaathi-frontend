@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { createRideSearchWithAI } from "../api/ai";
 import { fetchMyBookings } from "../api/bookings";
+import { AIResultMeta } from "../components/AIResultMeta";
 import { EmptyState } from "../components/EmptyState";
 import { createBooking, fetchRides } from "../api/rides";
 import { RideList } from "../components/RideList";
@@ -64,6 +65,7 @@ export function PassengerDashboardPage() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiWarnings, setAiWarnings] = useState<string[]>([]);
+  const [aiMeta, setAiMeta] = useState<{ provider: string; model: string; usedFallback: boolean; confidence: number | null } | null>(null);
   const [isGeneratingSearch, setIsGeneratingSearch] = useState(false);
 
   async function loadRides(nextFilters: RideFilters, withLoader = false) {
@@ -231,6 +233,7 @@ export function PassengerDashboardPage() {
                   setFeedError(null);
                   setAiSummary(null);
                   setAiWarnings([]);
+                  setAiMeta(null);
                   try {
                     const response = await createRideSearchWithAI({ prompt: aiPrompt.trim() });
                     const { filters: aiFilters } = response;
@@ -243,6 +246,12 @@ export function PassengerDashboardPage() {
                     };
                     setFilters(nextFilters);
                     setAiWarnings(aiFilters.safety_notes);
+                    setAiMeta({
+                      provider: response.provider,
+                      model: response.model,
+                      usedFallback: response.used_fallback,
+                      confidence: aiFilters.confidence,
+                    });
                     setAiSummary(
                       aiFilters.missing_fields.length
                         ? `${aiFilters.search_summary} Missing: ${aiFilters.missing_fields.join(", ")}.`
@@ -265,22 +274,21 @@ export function PassengerDashboardPage() {
                   setAiPrompt("");
                   setAiSummary(null);
                   setAiWarnings([]);
+                  setAiMeta(null);
                 }}
               >
                 Clear AI prompt
               </button>
             </div>
-            {aiSummary ? (
-              <div className="form-alert info" aria-live="polite">
-                {aiSummary}
-              </div>
-            ) : null}
-            {aiWarnings.length ? (
-              <ul className="ai-note-list" aria-label="AI search safety notes">
-                {aiWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
+            {aiMeta ? (
+              <AIResultMeta
+                provider={aiMeta.provider}
+                model={aiMeta.model}
+                usedFallback={aiMeta.usedFallback}
+                confidence={aiMeta.confidence}
+                summary={aiSummary}
+                safetyNotes={aiWarnings}
+              />
             ) : null}
           </div>
 
