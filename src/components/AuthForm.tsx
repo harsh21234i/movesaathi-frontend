@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 type AuthFormProps = {
   title: string;
@@ -10,6 +10,7 @@ type AuthFormProps = {
   includeRole?: boolean;
   passwordLabel?: string;
   passwordHint?: string;
+  passwordAutoComplete?: "current-password" | "new-password";
   footer?: ReactNode;
 };
 
@@ -23,8 +24,15 @@ export function AuthForm({
   includeRole = false,
   passwordLabel = "Password",
   passwordHint,
+  passwordAutoComplete = "new-password",
   footer,
 }: AuthFormProps) {
+  const formId = useId();
+  const nameId = `${formId}-name`;
+  const emailId = `${formId}-email`;
+  const phoneId = `${formId}-phone`;
+  const roleId = `${formId}-role`;
+  const passwordId = `${formId}-password`;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,21 +59,40 @@ export function AuthForm({
       </div>
 
       <div className="form-stack">
-        {includeName ? <input name="full_name" placeholder="Full name" required /> : null}
-        <input name="email" placeholder="Email address" type="email" required />
-        {includePhone ? <input name="phone_number" placeholder="Phone number" /> : null}
+        {includeName ? (
+          <div className="input-group">
+            <label htmlFor={nameId}>Full name</label>
+            <input id={nameId} name="full_name" autoComplete="name" required />
+          </div>
+        ) : null}
+        <div className="input-group">
+          <label htmlFor={emailId}>Email address</label>
+          <input id={emailId} name="email" type="email" autoComplete="email" required />
+        </div>
+        {includePhone ? (
+          <div className="input-group">
+            <label htmlFor={phoneId}>Phone number</label>
+            <input id={phoneId} name="phone_number" autoComplete="tel" inputMode="tel" />
+          </div>
+        ) : null}
         {includeRole ? (
           <div className="input-group">
-            <label htmlFor="role-field">I want to use MooveSaathi as</label>
-            <select id="role-field" name="role" defaultValue="passenger">
+            <label htmlFor={roleId}>I want to use MooveSaathi as</label>
+            <select id={roleId} name="role" defaultValue="passenger">
               <option value="passenger">Passenger - discover and book rides</option>
               <option value="driver">Driver - publish and manage rides</option>
             </select>
           </div>
         ) : null}
         <div className="input-group">
-          <label htmlFor="password-field">{passwordLabel}</label>
-          <input id="password-field" name="password" placeholder={passwordLabel} type="password" required />
+          <label htmlFor={passwordId}>{passwordLabel}</label>
+          <input
+            id={passwordId}
+            name="password"
+            type="password"
+            autoComplete={passwordAutoComplete}
+            required
+          />
           {passwordHint ? <small>{passwordHint}</small> : null}
         </div>
       </div>

@@ -2,10 +2,11 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { suggestChatReplyWithAI } from "../api/ai";
 import { getWebsocketBaseUrl } from "../api/client";
 import { fetchMessages, markMessagesSeen, sendMessage } from "../api/chat";
 import { useNotifications } from "../context/NotificationsContext";
-import type { ChatEvent, Message, User } from "../types";
+import type { AIChatSuggestionIntent, ChatEvent, Message, User } from "../types";
 
 type BookingConversationProps = {
   bookingId: number;
@@ -43,6 +44,14 @@ function formatDeparture(value?: string) {
   });
 }
 
+const suggestionIntents: Array<{ intent: AIChatSuggestionIntent; label: string }> = [
+  { intent: "ask_pickup_confirmation", label: "Pickup confirmation" },
+  { intent: "share_arrival_update", label: "Arrival update" },
+  { intent: "confirm_luggage", label: "Luggage check" },
+  { intent: "delay_apology", label: "Delay apology" },
+  { intent: "general_reply", label: "General reply" },
+];
+
 export function BookingConversation({
   bookingId,
   token,
@@ -57,6 +66,8 @@ export function BookingConversation({
   const [isSending, setIsSending] = useState(false);
   const [isSocketReady, setIsSocketReady] = useState(false);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestionNotes, setSuggestionNotes] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
@@ -286,6 +297,62 @@ export function BookingConversation({
           Last seen {formatMessageTime(lastSeenOutgoingMessage.seen_at)}
         </p>
       ) : null}
+
+      <div className="ai-assistant-card compact chat-ai-card" aria-labelledby={`chat-ai-title-${bookingId}`}>
+        <div>
+          <span className="eyebrow">AI chat helper</span>
+          <h4 id={`chat-ai-title-${bookingId}`}>Generate a safe trip reply</h4>
+          <p>The backend checks the booking context and warns before sensitive content such as OTPs or payment details are reused.</p>
+        </div>
+        <div className="ai-chip-row" role="group" aria-label="Chat suggestion intents">
+          {suggestionIntents.map((item) => (
+            <button
+              key={item.intent}
+              className="ghost-button ai-chip"
+              type="button"
+              disabled={isSuggesting}
+              onClick={async () => {
+                setIsSuggesting(true);
+                setError(null);
+                setSuggestionNotes([]);
+                try {
+                  const response = await suggestChatReplyWithAI({
+                    booking_id: bookingId,
+                    intent: item.intent,
+                    draft_message: draft.trim() || null,
+                  });
+                  setDraft(response.result.suggestion);
+                  setSuggestionNotes(response.result.safety_notes);
+                  if (response.result.should_warn) {
+                    pushToast({
+                      title: "Sensitive draft warning",
+                      description: "The assistant found content that should not be shared in chat.",
+                      tone: "warning",
+                    });
+                  }
+                } catch (suggestionError) {
+                  setError(
+                    axios.isAxiosError(suggestionError)
+                      ? String(suggestionError.response?.data?.detail ?? "Unable to generate chat suggestion.")
+                      : "Unable to generate chat suggestion.",
+                  );
+                } finally {
+                  setIsSuggesting(false);
+                }
+              }}
+            >
+              {isSuggesting ? "Generating..." : item.label}
+            </button>
+          ))}
+        </div>
+        {suggestionNotes.length ? (
+          <ul className="ai-note-list" aria-label="AI chat safety notes">
+            {suggestionNotes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
 
       <form
         className="chat-form"

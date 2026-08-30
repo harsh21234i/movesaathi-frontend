@@ -2,6 +2,7 @@ import axios from "axios";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { createRideSearchWithAI } from "../api/ai";
 import { fetchMyBookings } from "../api/bookings";
 import { EmptyState } from "../components/EmptyState";
 import { createBooking, fetchRides } from "../api/rides";
@@ -14,6 +15,8 @@ type RideFilters = {
   origin: string;
   destination: string;
   departure_after: string;
+  seat_count: string;
+  max_price_per_seat: string;
 };
 
 type SortMode = "soonest" | "price-low" | "price-high" | "seats";
@@ -22,6 +25,8 @@ const initialFilters: RideFilters = {
   origin: "",
   destination: "",
   departure_after: "",
+  seat_count: "",
+  max_price_per_seat: "",
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -56,6 +61,10 @@ export function PassengerDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [joiningRideId, setJoiningRideId] = useState<number | null>(null);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiWarnings, setAiWarnings] = useState<string[]>([]);
+  const [isGeneratingSearch, setIsGeneratingSearch] = useState(false);
 
   async function loadRides(nextFilters: RideFilters, withLoader = false) {
     if (withLoader) {
@@ -123,7 +132,19 @@ export function PassengerDashboardPage() {
     return () => window.clearInterval(intervalId);
   }, [pushToast]);
 
-  const sortedRides = [...rides].sort((left, right) => {
+  const filteredRides = rides.filter((ride) => {
+    const seatsNeeded = Number(filters.seat_count);
+    const maxPrice = Number(filters.max_price_per_seat);
+    if (filters.seat_count && !Number.isNaN(seatsNeeded) && ride.available_seats < seatsNeeded) {
+      return false;
+    }
+    if (filters.max_price_per_seat && !Number.isNaN(maxPrice) && ride.price_per_seat > maxPrice) {
+      return false;
+    }
+    return true;
+  });
+
+  const sortedRides = [...filteredRides].sort((left, right) => {
     if (sortMode === "price-low") return left.price_per_seat - right.price_per_seat;
     if (sortMode === "price-high") return right.price_per_seat - left.price_per_seat;
     if (sortMode === "seats") return right.available_seats - left.available_seats;
@@ -163,9 +184,18 @@ export function PassengerDashboardPage() {
             <small>this view focuses on discovery and booking</small>
           </article>
         </div>
+
+        <div className="hero-actions-row">
+          <Link className="primary-button inline-link-button" to="/request-ride">
+            Request a nearby driver
+          </Link>
+          <Link className="ghost-button inline-link-button" to="/trips">
+            Open trips board
+          </Link>
+        </div>
       </div>
 
-      <div className="dashboard-grid">
+      <div className="dashboard-grid passenger-dashboard-grid">
         <div className="panel search-panel" aria-labelledby="passenger-search-title">
           <div className="panel-header">
             <div>
@@ -173,6 +203,85 @@ export function PassengerDashboardPage() {
               <h3 id="passenger-search-title">Search and refine</h3>
             </div>
             <p>Filter the marketplace by route and time, then sort the ride list to match the tradeoff you care about most.</p>
+          </div>
+
+          <div className="ai-assistant-card compact" aria-labelledby="ride-search-ai-title">
+            <div>
+              <span className="eyebrow">AI search assistant</span>
+              <h4 id="ride-search-ai-title">Tell MooveSaathi what ride you need</h4>
+              <p>Example: Find me 2 seats from Pune to Nagpur tomorrow morning under Rs 800.</p>
+            </div>
+            <div className="input-group">
+              <label htmlFor="ride-search-ai-prompt">Ride requirement</label>
+              <textarea
+                id="ride-search-ai-prompt"
+                value={aiPrompt}
+                onChange={(event) => setAiPrompt(event.target.value)}
+                placeholder="Write pickup, dropoff, time, seats, and budget in one sentence."
+                rows={3}
+              />
+            </div>
+            <div className="action-row">
+              <button
+                className="primary-button"
+                type="button"
+                disabled={isGeneratingSearch || aiPrompt.trim().length < 10}
+                onClick={async () => {
+                  setIsGeneratingSearch(true);
+                  setFeedError(null);
+                  setAiSummary(null);
+                  setAiWarnings([]);
+                  try {
+                    const response = await createRideSearchWithAI({ prompt: aiPrompt.trim() });
+                    const { filters: aiFilters } = response;
+                    const nextFilters = {
+                      origin: aiFilters.origin ?? "",
+                      destination: aiFilters.destination ?? "",
+                      departure_after: aiFilters.departure_after ? new Date(aiFilters.departure_after).toISOString().slice(0, 16) : "",
+                      seat_count: aiFilters.seat_count != null ? String(aiFilters.seat_count) : "",
+                      max_price_per_seat: aiFilters.max_price_per_seat != null ? String(aiFilters.max_price_per_seat) : "",
+                    };
+                    setFilters(nextFilters);
+                    setAiWarnings(aiFilters.safety_notes);
+                    setAiSummary(
+                      aiFilters.missing_fields.length
+                        ? `${aiFilters.search_summary} Missing: ${aiFilters.missing_fields.join(", ")}.`
+                        : aiFilters.search_summary,
+                    );
+                    await loadRides(nextFilters);
+                  } catch (aiError) {
+                    setFeedError(getErrorMessage(aiError, "Unable to generate ride search filters."));
+                  } finally {
+                    setIsGeneratingSearch(false);
+                  }
+                }}
+              >
+                {isGeneratingSearch ? "Building search..." : "Generate search"}
+              </button>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setAiPrompt("");
+                  setAiSummary(null);
+                  setAiWarnings([]);
+                }}
+              >
+                Clear AI prompt
+              </button>
+            </div>
+            {aiSummary ? (
+              <div className="form-alert info" aria-live="polite">
+                {aiSummary}
+              </div>
+            ) : null}
+            {aiWarnings.length ? (
+              <ul className="ai-note-list" aria-label="AI search safety notes">
+                {aiWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
           <div className="inline-grid two-column">
@@ -216,6 +325,33 @@ export function PassengerDashboardPage() {
                 <option value="price-high">Highest price</option>
                 <option value="seats">Most seats</option>
               </select>
+            </div>
+          </div>
+
+          <div className="inline-grid two-column">
+            <div className="input-group">
+              <label htmlFor="search-seat-count">Seats needed</label>
+              <input
+                id="search-seat-count"
+                type="number"
+                min="1"
+                max="10"
+                value={filters.seat_count}
+                onChange={(event) => setFilters((current) => ({ ...current, seat_count: event.target.value }))}
+                placeholder="2"
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="search-max-price">Max fare per seat</label>
+              <input
+                id="search-max-price"
+                type="number"
+                min="0"
+                step="1"
+                value={filters.max_price_per_seat}
+                onChange={(event) => setFilters((current) => ({ ...current, max_price_per_seat: event.target.value }))}
+                placeholder="800"
+              />
             </div>
           </div>
 
@@ -301,31 +437,32 @@ export function PassengerDashboardPage() {
             ) : null}
           </div>
         </div>
-
-        <RideList
-          rides={sortedRides}
-          joiningRideId={joiningRideId}
-          currentUserId={user?.id}
-          onJoin={async (rideId) => {
-            setBookingError(null);
-            setJoiningRideId(rideId);
-            try {
-              const booking = await createBooking(rideId);
-              pushToast({
-                title: "Ride request sent",
-                description: "Your booking request is now waiting for a driver decision.",
-                tone: "success",
-              });
-              await loadBookings();
-              navigate(`/bookings/${booking.id}`);
-            } catch (bookingRequestError) {
-              setBookingError(getErrorMessage(bookingRequestError, "Unable to join this ride."));
-            } finally {
-              setJoiningRideId(null);
-            }
-          }}
-        />
       </div>
+
+      <RideList
+        rides={sortedRides}
+        joiningRideId={joiningRideId}
+        currentUserId={user?.id}
+        bookedRideIds={bookings.map((booking) => booking.ride.id)}
+        onJoin={async (rideId) => {
+          setBookingError(null);
+          setJoiningRideId(rideId);
+          try {
+            const booking = await createBooking(rideId);
+            pushToast({
+              title: "Ride request sent",
+              description: "Your booking request is now waiting for a driver decision.",
+              tone: "success",
+            });
+            await loadBookings();
+            navigate(`/bookings/${booking.id}`);
+          } catch (bookingRequestError) {
+            setBookingError(getErrorMessage(bookingRequestError, "Unable to join this ride."));
+          } finally {
+            setJoiningRideId(null);
+          }
+        }}
+      />
 
       {bookingError ? (
         <div className="form-alert error dashboard-banner" role="alert" aria-live="assertive">

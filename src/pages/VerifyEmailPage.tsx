@@ -42,6 +42,11 @@ export function VerifyEmailPage() {
   return (
     <div className="auth-page">
       <div className="auth-hero single-column">
+        <div className="auth-copy auth-copy-panel auth-copy-compact">
+          <span className="eyebrow">Account verification</span>
+          <h2>Confirm your email before you start booking or publishing rides.</h2>
+          <p>Verification keeps the auth flow complete and helps prevent duplicate or low-trust accounts from entering the system.</p>
+        </div>
         <div className="auth-card">
           <div className="auth-card-header">
             <span className="eyebrow">Account verification</span>
@@ -66,13 +71,17 @@ export function VerifyEmailPage() {
               }
             }}
           >
-            <input
-              name="token"
-              placeholder="Verification token"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              required
-            />
+            <div className="input-group">
+              <label htmlFor="verify-token">Verification token</label>
+              <input
+                id="verify-token"
+                name="token"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                autoComplete="one-time-code"
+                required
+              />
+            </div>
             <button className="primary-button" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Verifying..." : "Verify email"}
             </button>
@@ -97,14 +106,18 @@ export function VerifyEmailPage() {
               }
             }}
           >
-            <input
-              name="email"
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
+            <div className="input-group">
+              <label htmlFor="verify-email">Email address</label>
+              <input
+                id="verify-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
             <button className="ghost-button" type="submit" disabled={isSubmitting}>
               Resend verification
             </button>

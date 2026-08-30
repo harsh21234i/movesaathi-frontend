@@ -113,10 +113,20 @@ export function DriverDashboardPage() {
             <small>remaining capacity across your rides</small>
           </article>
         </div>
+
+        <div className="hero-actions-row">
+          <Link className="primary-button inline-link-button" to="/driver/requests">
+            Go to nearby requests
+          </Link>
+          <Link className="ghost-button inline-link-button" to="/driver/rides">
+            Open ride management
+          </Link>
+        </div>
       </div>
 
       <div className="dashboard-grid">
         <RideForm
+          allowAdvancedLocation={false}
           onSubmit={async (formData) => {
             setError(null);
             try {

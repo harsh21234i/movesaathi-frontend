@@ -17,13 +17,20 @@ export function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-hero">
-        <div className="auth-copy">
+        <div className="auth-copy auth-copy-panel">
           <span className="eyebrow">Verified onboarding</span>
           <h2>Create your rider profile and finish verification on your terms.</h2>
-          <p>
-            The backend now supports email verification, refresh sessions, and password recovery. This flow
-            keeps the frontend aligned instead of assuming instant login forever.
-          </p>
+          <p>The backend now supports email verification, refresh sessions, and password recovery. This keeps the frontend aligned instead of assuming instant login forever.</p>
+          <div className="auth-copy-points">
+            <div>
+              <strong>Passenger or driver</strong>
+              <span>Choose the right role up front so the dashboard matches the workflow.</span>
+            </div>
+            <div>
+              <strong>Better recovery</strong>
+              <span>Email verification and password reset are wired into the new auth flow.</span>
+            </div>
+          </div>
         </div>
         <AuthForm
           title="Create account"
@@ -33,6 +40,7 @@ export function RegisterPage() {
           includePhone
           includeRole
           passwordHint="Use at least 8 characters with upper-case, lower-case, and a number."
+          passwordAutoComplete="new-password"
           onSubmit={async (formData) => {
             try {
               const response = await register({

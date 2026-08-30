@@ -447,3 +447,63 @@ export type DispatchEvent =
   | {
       event_type: "pong";
     };
+
+export type AIRideCreateDraft = {
+  origin: string | null;
+  destination: string | null;
+  departure_time: string | null;
+  available_seats: number | null;
+  price_per_seat: number | null;
+  vehicle_details: string | null;
+  notes: string | null;
+  missing_fields: string[];
+  confidence: number;
+  safety_notes: string[];
+};
+
+export type AIRideCreateAssistantResponse = {
+  provider: string;
+  model: string;
+  used_fallback: boolean;
+  draft: AIRideCreateDraft;
+};
+
+export type AIRideSearchFilters = {
+  origin: string | null;
+  destination: string | null;
+  departure_after: string | null;
+  departure_before: string | null;
+  seat_count: number | null;
+  max_price_per_seat: number | null;
+  missing_fields: string[];
+  confidence: number;
+  search_summary: string;
+  safety_notes: string[];
+};
+
+export type AIRideSearchAssistantResponse = {
+  provider: string;
+  model: string;
+  used_fallback: boolean;
+  filters: AIRideSearchFilters;
+};
+
+export type AIChatSuggestionIntent =
+  | "ask_pickup_confirmation"
+  | "share_arrival_update"
+  | "confirm_luggage"
+  | "delay_apology"
+  | "general_reply";
+
+export type AIChatSuggestionResponse = {
+  provider: string;
+  model: string;
+  used_fallback: boolean;
+  booking_summary: string;
+  result: {
+    suggestion: string;
+    tone: "polite" | "friendly" | "concise" | "safety_warning";
+    should_warn: boolean;
+    safety_notes: string[];
+  };
+};

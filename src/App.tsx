@@ -7,10 +7,12 @@ import { BookingDetailPage } from "./pages/BookingDetailPage";
 import { ChatPage } from "./pages/ChatPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DriverRideManagementPage } from "./pages/DriverRideManagementPage";
+import { DriverRequestsPage } from "./pages/DriverRequestsPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { PassengerTripsPage } from "./pages/PassengerTripsPage";
+import { PassengerRequestPage } from "./pages/PassengerRequestPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { SessionsPage } from "./pages/SessionsPage";
@@ -40,7 +42,9 @@ export default function App() {
         <Route path="rides/:rideId" element={<RideDetailPage />} />
         <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
         <Route path="chat/:bookingId" element={<ChatPage />} />
+        <Route path="request-ride" element={<PassengerRequestPage />} />
         <Route path="driver/rides" element={<DriverRideManagementPage />} />
+        <Route path="driver/requests" element={<DriverRequestsPage />} />
         <Route path="trips" element={<PassengerTripsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="sessions" element={<SessionsPage />} />

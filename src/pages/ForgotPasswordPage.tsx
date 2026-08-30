@@ -20,6 +20,11 @@ export function ForgotPasswordPage() {
   return (
     <div className="auth-page">
       <div className="auth-hero single-column">
+        <div className="auth-copy auth-copy-panel auth-copy-compact">
+          <span className="eyebrow">Password recovery</span>
+          <h2>Reset access without leaving the secure auth flow.</h2>
+          <p>Request a reset token, then use it to set a new password. The backend keeps the flow consistent across sign-in, verification, and recovery.</p>
+        </div>
         <form
           className="auth-card"
           onSubmit={async (event) => {
@@ -46,7 +51,10 @@ export function ForgotPasswordPage() {
             <p>Request a reset link for the email attached to your MooveSaathi account.</p>
           </div>
           <div className="form-stack">
-            <input name="email" type="email" placeholder="Email address" required />
+            <div className="input-group">
+              <label htmlFor="forgot-password-email">Email address</label>
+              <input id="forgot-password-email" name="email" type="email" autoComplete="email" required />
+            </div>
           </div>
           {message ? <div className="form-alert success">{message}</div> : null}
           {resetToken ? <div className="form-alert info">Local reset token: {resetToken}</div> : null}
