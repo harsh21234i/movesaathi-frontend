@@ -24,12 +24,14 @@ export function Layout() {
     user?.role === "driver"
       ? [
           { to: "/", label: "Dashboard", description: "Driver overview and approvals" },
+          { to: "/driver/requests", label: "Nearby requests", description: "Go online and accept live pickups" },
           { to: "/driver/rides", label: "Manage rides", description: "Edit routes and inspect passengers" },
           { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
           { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
         ]
       : [
           { to: "/", label: "Dashboard", description: "Ride discovery and booking feed" },
+          { to: "/request-ride", label: "Request ride", description: "Create a live pickup for nearby drivers" },
           { to: "/trips", label: "Trips", description: "Upcoming, pending, and completed rides" },
           { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
           { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
@@ -46,8 +48,8 @@ export function Layout() {
           <h1>MooveSaathi</h1>
           <p>
             {user?.role === "driver"
-              ? "Publish rides, review booking requests, and keep coordination moving."
-              : "Discover routes, track your bookings, and jump into chat once a ride is confirmed."}
+              ? "Publish routes, go online for nearby dispatch work, and keep trip coordination moving."
+              : "Browse rides or send a live pickup request, then move into booking detail once a driver accepts."}
           </p>
         </div>
 
@@ -103,8 +105,8 @@ export function Layout() {
           <span className="eyebrow">Daily rhythm</span>
           <p>
             {user?.role === "driver"
-              ? "Keep routes accurate, update passengers quickly, and use the ride detail pages to avoid fragmented operations."
-              : "Move from discovery to booking detail to chat without losing route context or status visibility."}
+              ? "Switch between published routes and live nearby requests without losing passenger context or trip control."
+              : "Choose between marketplace browsing and live dispatch depending on how quickly you need a driver."}
           </p>
         </div>
 

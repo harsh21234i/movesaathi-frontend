@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchLatestRideLocation, fetchRideLocationAccess, fetchRideLocationHistory, updateRideLocation } from "../api/rides";
 import type { RideLocation, RideLocationAccess } from "../types";
 import { EmptyState } from "./EmptyState";
+import { InteractiveMap } from "./InteractiveMap";
 
 type LiveLocationPanelProps = {
   rideId: number;
@@ -120,14 +121,22 @@ export function LiveLocationPanel({ rideId, canUpdate = false }: LiveLocationPan
 
       {!isLoading && location ? (
         <>
-          <div className="location-map" aria-label={`Latest location ${location.latitude}, ${location.longitude}`}>
-            <div className="map-grid" />
-            <div className="location-pulse" />
-            <div className="location-marker">
-              <span />
-              <strong>Driver</strong>
-            </div>
-          </div>
+          <InteractiveMap
+            className="location-map"
+            markers={[
+              {
+                id: "driver",
+                label: "Driver",
+                latitude: location.latitude,
+                longitude: location.longitude,
+                tone: "driver",
+              },
+            ]}
+            emptyLabel="No live location yet"
+            title={`Driver location for ride ${rideId}`}
+            description="Drag the map, zoom in, or inspect the latest driver position."
+            defaultZoom={15}
+          />
           <div className="detail-metric-grid">
             <div>
               <small>Latitude</small>

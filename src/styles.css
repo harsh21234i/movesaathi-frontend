@@ -708,6 +708,53 @@ textarea {
   padding: 1rem 1.05rem;
 }
 
+.ai-assistant-card {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(47, 100, 150, 0.14);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(47, 100, 150, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(234, 244, 255, 0.88), rgba(255, 253, 248, 0.92));
+}
+
+.ai-assistant-card.compact {
+  padding: 0.95rem;
+}
+
+.ai-assistant-card h4 {
+  margin: 0.28rem 0 0.35rem;
+  font-size: 1.18rem;
+}
+
+.ai-assistant-card p,
+.ai-note-list {
+  color: var(--muted);
+}
+
+.ai-note-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.ai-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.ai-chip {
+  padding: 0.72rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.chat-ai-card {
+  margin-top: 0.2rem;
+}
+
 .info-card strong,
 .empty-card strong,
 .chat-summary-card strong {
@@ -2145,5 +2192,10 @@ textarea {
   .passenger-list-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .ai-chip-row {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }

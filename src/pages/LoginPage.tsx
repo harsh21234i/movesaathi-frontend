@@ -19,17 +19,26 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-hero">
-        <div className="auth-copy">
+        <div className="auth-copy auth-copy-panel">
           <span className="eyebrow">City-to-city rides</span>
           <h2>Reliable shared travel with live booking and verified accounts.</h2>
-          <p>
-            Sign in to publish rides, manage bookings, and keep passenger conversations in one place.
-          </p>
+          <p>Sign in to publish rides, manage bookings, and keep passenger conversations in one place.</p>
+          <div className="auth-copy-points">
+            <div>
+              <strong>Role aware</strong>
+              <span>Driver and passenger views stay separate after sign-in.</span>
+            </div>
+            <div>
+              <strong>Live operations</strong>
+              <span>Payments, chat, and ride updates are available from the dashboard.</span>
+            </div>
+          </div>
         </div>
         <AuthForm
           title="Welcome back"
           subtitle="Use the same email you used on the backend-authenticated account."
           submitLabel="Sign in"
+          passwordAutoComplete="current-password"
           onSubmit={async (formData) => {
             try {
               const response = await login(String(formData.get("email")), String(formData.get("password")));

@@ -25,6 +25,11 @@ export function ResetPasswordPage() {
   return (
     <div className="auth-page">
       <div className="auth-hero single-column">
+        <div className="auth-copy auth-copy-panel auth-copy-compact">
+          <span className="eyebrow">Credential update</span>
+          <h2>Choose a new password with the same secure backend policy.</h2>
+          <p>The reset token can come from your email link or the local development response. Use a strong password to finish recovery cleanly.</p>
+        </div>
         <form
           className="auth-card"
           onSubmit={async (event) => {
@@ -49,16 +54,19 @@ export function ResetPasswordPage() {
             <p>The backend enforces a strong password policy, so use upper-case, lower-case, and numbers.</p>
           </div>
           <div className="form-stack">
-            <input
-              name="token"
-              placeholder="Reset token"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              required
-            />
+            <div className="input-group">
+              <label htmlFor="reset-token">Reset token</label>
+              <input
+                id="reset-token"
+                name="token"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                required
+              />
+            </div>
             <div className="input-group">
               <label htmlFor="new-password-field">New password</label>
-              <input id="new-password-field" name="password" type="password" required />
+              <input id="new-password-field" name="password" type="password" autoComplete="new-password" required />
               <small>At least 8 characters with upper-case, lower-case, and numeric characters.</small>
             </div>
           </div>

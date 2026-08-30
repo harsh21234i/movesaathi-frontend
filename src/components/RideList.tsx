@@ -7,6 +7,7 @@ type RideListProps = {
   rides: Ride[];
   joiningRideId: number | null;
   currentUserId?: number;
+  bookedRideIds?: number[];
   onJoin: (rideId: number) => Promise<void>;
 };
 
@@ -25,7 +26,7 @@ function formatDeparture(value: string) {
   };
 }
 
-export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideListProps) {
+export function RideList({ rides, joiningRideId, currentUserId, bookedRideIds = [], onJoin }: RideListProps) {
   return (
     <section className="panel ride-feed-panel" aria-labelledby="ride-feed-title">
       <div className="panel-header">
@@ -40,6 +41,8 @@ export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideLi
         {rides.map((ride) => {
           const departure = formatDeparture(ride.departure_time);
           const isOwnRide = ride.driver_id === currentUserId;
+          const isAlreadyBooked = bookedRideIds.includes(ride.id);
+          const isJoinDisabled = joiningRideId === ride.id || isOwnRide || isAlreadyBooked;
 
           return (
             <article key={ride.id} className="ride-card" aria-label={`Ride from ${ride.origin} to ${ride.destination}`}>
@@ -86,20 +89,29 @@ export function RideList({ rides, joiningRideId, currentUserId, onJoin }: RideLi
                 <span className={ride.available_seats <= 1 ? "status-pill warning" : "status-pill success"}>
                   {ride.available_seats <= 1 ? "Last seats" : "Open for booking"}
                 </span>
+                {isAlreadyBooked ? <span className="status-pill neutral-dark">Already requested</span> : null}
                 <Link className="ghost-button inline-link-button" to={`/rides/${ride.id}`}>
                   View details
                 </Link>
                 <button
                   className="primary-button"
-                  disabled={joiningRideId === ride.id || isOwnRide}
+                  disabled={isJoinDisabled}
                   aria-label={
                     isOwnRide
                       ? `This is your own ride from ${ride.origin} to ${ride.destination}`
+                      : isAlreadyBooked
+                        ? `You already have a booking for ride from ${ride.origin} to ${ride.destination}`
                       : `Join ride from ${ride.origin} to ${ride.destination}`
                   }
                   onClick={() => void onJoin(ride.id)}
                 >
-                  {isOwnRide ? "Your ride" : joiningRideId === ride.id ? "Joining..." : "Request seat"}
+                  {isOwnRide
+                    ? "Your ride"
+                    : isAlreadyBooked
+                      ? "Booked"
+                      : joiningRideId === ride.id
+                        ? "Joining..."
+                        : "Request seat"}
                 </button>
               </div>
             </article>

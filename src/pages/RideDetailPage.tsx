@@ -86,6 +86,11 @@ export function RideDetailPage() {
             {ride.origin} to {ride.destination}
           </h2>
           <p>{formatDeparture(ride.departure_time)}</p>
+          <div className="profile-tags detail-badges">
+            <span className="status-pill neutral-dark">Seats left {ride.available_seats}</span>
+            <span className="status-pill neutral-dark">Fare Rs. {ride.price_per_seat.toFixed(0)}</span>
+            <span className="status-pill neutral-dark">{hasExistingBooking ? "Booking active" : "Open for booking"}</span>
+          </div>
         </div>
         <div className="detail-hero-actions">
           {hasExistingBooking ? (

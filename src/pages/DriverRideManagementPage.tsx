@@ -12,7 +12,23 @@ import type { DriverBooking, Ride } from "../types";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
-    return String(error.response?.data?.detail ?? fallback);
+    const responseData = error.response?.data;
+    if (typeof responseData === "string") {
+      return responseData;
+    }
+    if (responseData && typeof responseData === "object") {
+      const detail = (responseData as { detail?: unknown }).detail;
+      if (typeof detail === "string") {
+        return detail;
+      }
+      if (detail != null) {
+        return String(detail);
+      }
+      return JSON.stringify(responseData);
+    }
+    if (error.response) {
+      return `HTTP ${error.response.status} ${error.response.statusText || ""}`.trim();
+    }
   }
   return fallback;
 }
@@ -28,6 +44,7 @@ export function DriverRideManagementPage() {
   const [managedBookings, setManagedBookings] = useState<DriverBooking[]>([]);
   const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busyRideId, setBusyRideId] = useState<number | null>(null);
 
   async function loadData() {
     setError(null);
@@ -91,7 +108,7 @@ export function DriverRideManagementPage() {
                     </p>
                   </div>
                   <div className="booking-actions">
-                    <span className={`status-pill ${ride.is_active ? "success" : "warning"}`}>{ride.is_active ? "active" : "cancelled"}</span>
+                    <span className={`status-pill ${ride.is_active ? "success" : "warning"}`}>{ride.is_active ? "active" : ride.status}</span>
                     <div className="action-row">
                       <button className="ghost-button" type="button" onClick={() => setSelectedRideId(ride.id)}>
                         Edit ride
@@ -102,7 +119,10 @@ export function DriverRideManagementPage() {
                       <button
                         className="ghost-button"
                         type="button"
+                        disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
                         onClick={async () => {
+                          setBusyRideId(ride.id);
+                          setError(null);
                           try {
                             await cancelRide(ride.id);
                             pushToast({
@@ -112,11 +132,13 @@ export function DriverRideManagementPage() {
                             });
                             await loadData();
                           } catch (cancelError) {
-                            setError(getErrorMessage(cancelError, "Unable to cancel this ride. The backend endpoint may still be pending."));
+                            setError(getErrorMessage(cancelError, "Unable to cancel this ride."));
+                          } finally {
+                            setBusyRideId(null);
                           }
                         }}
                       >
-                        Cancel ride
+                        {busyRideId === ride.id ? "Cancelling..." : "Cancel ride"}
                       </button>
                     </div>
                   </div>
@@ -141,6 +163,7 @@ export function DriverRideManagementPage() {
               <RideForm
                 compact
                 initialValues={selectedRide}
+                allowAdvancedLocation={false}
                 title="Edit this ride"
                 subtitle="Refine the route, fare, or trip notes without leaving your management view."
                 submitLabel="Save changes"
@@ -164,6 +187,21 @@ export function DriverRideManagementPage() {
                     tone: "success",
                   });
                   await loadData();
+                }}
+                onAutoSave={async (formData) => {
+                  await updateRide(selectedRide.id, {
+                    origin: String(formData.get("origin")),
+                    destination: String(formData.get("destination")),
+                    origin_latitude: optionalCoordinate(formData, "origin_latitude"),
+                    origin_longitude: optionalCoordinate(formData, "origin_longitude"),
+                    destination_latitude: optionalCoordinate(formData, "destination_latitude"),
+                    destination_longitude: optionalCoordinate(formData, "destination_longitude"),
+                    departure_time: new Date(String(formData.get("departure_time"))).toISOString(),
+                    available_seats: Number(formData.get("available_seats")),
+                    price_per_seat: Number(formData.get("price_per_seat")),
+                    vehicle_details: String(formData.get("vehicle_details") || ""),
+                    notes: String(formData.get("notes") || ""),
+                  });
                 }}
               />
 

@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { fetchMyBookings } from "../api/bookings";
+import { cancelMyBooking, fetchMyBookings } from "../api/bookings";
 import { EmptyState } from "../components/EmptyState";
 import { useNotifications } from "../context/NotificationsContext";
 import type { PassengerBooking } from "../types";
@@ -14,6 +14,7 @@ export function PassengerTripsPage() {
   const [bookings, setBookings] = useState<PassengerBooking[]>([]);
   const [tab, setTab] = useState<TripTab>("upcoming");
   const [error, setError] = useState<string | null>(null);
+  const [busyBookingId, setBusyBookingId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchMyBookings()
@@ -56,7 +57,11 @@ export function PassengerTripsPage() {
 
     if (tab === "completed") {
       return bookings.filter(
-        (booking) => booking.status === "rejected" || new Date(booking.ride.departure_time).getTime() < now,
+        (booking) =>
+          booking.status === "rejected" ||
+          booking.status === "cancelled_by_passenger" ||
+          booking.status === "cancelled_by_driver" ||
+          new Date(booking.ride.departure_time).getTime() < now,
       );
     }
 
@@ -114,6 +119,37 @@ export function PassengerTripsPage() {
                 <Link className="ghost-button inline-link-button" to={`/bookings/${booking.id}`}>
                   Open booking
                 </Link>
+                {booking.status === "pending" || booking.status === "accepted" ? (
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    disabled={busyBookingId === booking.id}
+                    onClick={async () => {
+                      setBusyBookingId(booking.id);
+                      setError(null);
+                      try {
+                        await cancelMyBooking(booking.id);
+                        const nextBookings = await fetchMyBookings();
+                        setBookings(nextBookings);
+                        pushToast({
+                          title: "Booking cancelled",
+                          description: "Your booking was removed from the active trips board.",
+                          tone: "warning",
+                        });
+                      } catch (cancelError) {
+                        setError(
+                          axios.isAxiosError(cancelError)
+                            ? String(cancelError.response?.data?.detail ?? "Unable to cancel booking.")
+                            : "Unable to cancel booking.",
+                        );
+                      } finally {
+                        setBusyBookingId(null);
+                      }
+                    }}
+                  >
+                    {busyBookingId === booking.id ? "Cancelling..." : "Cancel booking"}
+                  </button>
+                ) : null}
               </div>
             </article>
           ))}
