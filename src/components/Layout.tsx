@@ -1,6 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 
-import { ApiStatusBanner } from "./ApiStatusBanner";
 import { ToastViewport } from "./ToastViewport";
 import { useAuth } from "../context/AuthContext";
 
@@ -121,7 +120,6 @@ export function Layout() {
       </aside>
 
       <main className="content" id="main-content" tabIndex={-1}>
-        <ApiStatusBanner />
         <ToastViewport />
         <Outlet />
       </main>

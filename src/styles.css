@@ -524,6 +524,8 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
+  width: min(1100px, calc(100% - 2rem));
+  margin: 1rem auto;
   padding: 0.85rem 1rem;
   border-radius: 18px;
   border: 1px solid rgba(157, 101, 29, 0.2);
