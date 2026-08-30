@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { cancelRide, fetchMyRides, updateRide } from "../api/rides";
+import { cancelRide, completeRide, fetchMyRides, updateRide } from "../api/rides";
 import { fetchManagedBookings } from "../api/bookings";
 import { EmptyState } from "../components/EmptyState";
 import { LiveLocationPanel } from "../components/LiveLocationPanel";
@@ -139,6 +139,30 @@ export function DriverRideManagementPage() {
                         }}
                       >
                         {busyRideId === ride.id ? "Cancelling..." : "Cancel ride"}
+                      </button>
+                      <button
+                        className="primary-button"
+                        type="button"
+                        disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
+                        onClick={async () => {
+                          setBusyRideId(ride.id);
+                          setError(null);
+                          try {
+                            await completeRide(ride.id);
+                            pushToast({
+                              title: "Ride completed",
+                              description: "Accepted boarded passengers were marked complete and payments were finalized.",
+                              tone: "success",
+                            });
+                            await loadData();
+                          } catch (completeError) {
+                            setError(getErrorMessage(completeError, "Unable to complete this ride. Board accepted passengers first."));
+                          } finally {
+                            setBusyRideId(null);
+                          }
+                        }}
+                      >
+                        {busyRideId === ride.id ? "Updating..." : "Complete ride"}
                       </button>
                     </div>
                   </div>

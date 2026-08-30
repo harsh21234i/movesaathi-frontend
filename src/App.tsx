@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import { AccountPage } from "./pages/AccountPage";
 import { BookingDetailPage } from "./pages/BookingDetailPage";
 import { ChatPage } from "./pages/ChatPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -13,6 +14,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { PassengerTripsPage } from "./pages/PassengerTripsPage";
 import { PassengerRequestPage } from "./pages/PassengerRequestPage";
+import { PublicTripPage } from "./pages/PublicTripPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { SessionsPage } from "./pages/SessionsPage";
@@ -30,6 +32,7 @@ export default function App() {
       <Route path="/forgot-password" element={token ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
       <Route path="/reset-password" element={token ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
       <Route path="/verify-email" element={token ? <Navigate to="/" replace /> : <VerifyEmailPage />} />
+      <Route path="/share/:shareToken" element={<PublicTripPage />} />
       <Route
         path="/"
         element={
@@ -47,6 +50,7 @@ export default function App() {
         <Route path="driver/requests" element={<DriverRequestsPage />} />
         <Route path="trips" element={<PassengerTripsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="account" element={<AccountPage />} />
         <Route path="sessions" element={<SessionsPage />} />
         <Route path="ops" element={<OperationsPage />} />
       </Route>

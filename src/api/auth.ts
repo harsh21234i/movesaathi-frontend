@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type {
+  AccountSecurity,
   AuthTokens,
   ForgotPasswordResponse,
   RegisterResponse,
@@ -42,6 +43,13 @@ export async function resetPassword(token: string, newPassword: string) {
   await api.post("/auth/reset-password", { token, new_password: newPassword });
 }
 
+export async function changePassword(currentPassword: string, newPassword: string) {
+  await api.post("/auth/change-password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
 export async function verifyEmail(token: string) {
   await api.post("/auth/verify-email", { token });
 }
@@ -56,6 +64,15 @@ export async function fetchSessions() {
   return data;
 }
 
+export async function fetchAccountSecurity() {
+  const { data } = await api.get<AccountSecurity>("/auth/security");
+  return data;
+}
+
 export async function revokeSession(sessionJti: string) {
   await api.delete(`/auth/sessions/${sessionJti}`);
+}
+
+export async function revokeOtherSessions() {
+  await api.post("/auth/sessions/revoke-others");
 }

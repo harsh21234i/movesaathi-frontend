@@ -1,4 +1,5 @@
 export type UserRole = "driver" | "passenger";
+export type DriverVerificationStatus = "not_submitted" | "pending" | "approved" | "rejected";
 
 export type User = {
   id: number;
@@ -10,6 +11,17 @@ export type User = {
   rating: number;
   email_verified: boolean;
   email_verified_at?: string | null;
+  driver_verification_status?: DriverVerificationStatus;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_color?: string | null;
+  vehicle_plate_number?: string | null;
+  driver_license_number?: string | null;
+  driver_verification_rejection_reason?: string | null;
+  driver_profile_submitted_at?: string | null;
+  driver_profile_reviewed_at?: string | null;
+  failed_login_attempts?: number;
+  locked_until?: string | null;
   created_at: string;
 };
 
@@ -196,10 +208,34 @@ export type SessionSummary = {
   jti: string;
   issued_at: string;
   expires_at: string;
+  current_session?: boolean;
+  device_name?: string | null;
+  user_agent?: string | null;
+  ip_address?: string | null;
 };
 
 export type SessionList = {
   items: SessionSummary[];
+};
+
+export type AccountSecurity = {
+  failed_login_attempts: number;
+  locked_until: string | null;
+  is_locked: boolean;
+  lockout_reason: string | null;
+  recovery_hint: string | null;
+};
+
+export type DriverVerification = {
+  driver_verification_status: DriverVerificationStatus;
+  vehicle_make: string | null;
+  vehicle_model: string | null;
+  vehicle_color: string | null;
+  vehicle_plate_number: string | null;
+  driver_license_number: string | null;
+  driver_verification_rejection_reason: string | null;
+  driver_profile_submitted_at: string | null;
+  driver_profile_reviewed_at: string | null;
 };
 
 export type DeploymentStatus = {
@@ -320,6 +356,60 @@ export type Payment = {
   updated_at: string;
 };
 
+export type BookingShareToken = {
+  token: string;
+  booking_id: number;
+  created_at: string;
+};
+
+export type BookingShareRevoke = {
+  revoked: boolean;
+};
+
+export type PublicTripStatus = {
+  origin: string;
+  destination: string;
+  departure_time: string;
+  ride_status: string;
+  booking_status: Booking["status"];
+  driver: {
+    first_name: string;
+    rating: number;
+  };
+  latest_location: {
+    latitude: number;
+    longitude: number;
+    heading: number | null;
+    updated_at: string;
+    age_seconds: number;
+    is_stale: boolean;
+  } | null;
+  location_visible: boolean;
+};
+
+export type IncidentSeverity = "low" | "medium" | "high" | "emergency";
+export type IncidentStatus = "open" | "investigating" | "resolved" | "dismissed";
+
+export type Incident = {
+  id: number;
+  reporter_id: number;
+  ride_id: number | null;
+  booking_id: number | null;
+  ride_request_id: number | null;
+  title: string;
+  description: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  support_notes: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IncidentList = {
+  items: Incident[];
+};
+
 export type PaymentList = {
   items: Payment[];
 };
@@ -334,14 +424,34 @@ export type SupportUser = {
   rating: number;
   email_verified: boolean;
   email_verified_at: string | null;
+  driver_verification_status?: DriverVerificationStatus;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_color?: string | null;
+  vehicle_plate_number?: string | null;
+  driver_license_number?: string | null;
+  driver_verification_rejection_reason?: string | null;
+  driver_profile_submitted_at?: string | null;
+  driver_profile_reviewed_at?: string | null;
   failed_login_attempts: number;
   locked_until: string | null;
   created_at: string;
   audit_summary: AuditLogSummary | null;
+  driver_verification_history?: {
+    items: AuditLog[];
+  } | null;
 };
 
 export type SupportUserList = {
   items: SupportUser[];
+};
+
+export type SupportPaymentList = {
+  items: Payment[];
+};
+
+export type SupportBookingList = {
+  items: DriverBooking[];
 };
 
 export type AuditLog = {

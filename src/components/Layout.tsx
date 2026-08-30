@@ -27,6 +27,7 @@ export function Layout() {
           { to: "/driver/requests", label: "Nearby requests", description: "Go online and accept live pickups" },
           { to: "/driver/rides", label: "Manage rides", description: "Edit routes and inspect passengers" },
           { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
+          { to: "/account", label: "Account", description: "Profile, password, and verification" },
           { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
         ]
       : [
@@ -34,6 +35,7 @@ export function Layout() {
           { to: "/request-ride", label: "Request ride", description: "Create a live pickup for nearby drivers" },
           { to: "/trips", label: "Trips", description: "Upcoming, pending, and completed rides" },
           { to: "/notifications", label: "Notifications", description: "Read backend booking updates" },
+          { to: "/account", label: "Account", description: "Profile and password controls" },
           { to: "/sessions", label: "Sessions", description: "Revoke active logins" },
         ];
 

@@ -5,13 +5,25 @@ import { cleanupMyAuditLogs, fetchMyAuditLogs, fetchMyAuditSummary } from "../ap
 import { fetchDeploymentChecklist, fetchDeploymentPreflight, fetchDeploymentStatus } from "../api/deployment";
 import { fetchJobsStatus } from "../api/jobs";
 import { fetchMyPayments } from "../api/payments";
-import { fetchSupportUser, searchSupportUsers } from "../api/support";
+import {
+  fetchPendingDriverVerifications,
+  fetchSupportBookings,
+  fetchSupportIncidents,
+  fetchSupportPayments,
+  fetchSupportUser,
+  reconcileSupportPayment,
+  reviewDriverVerification,
+  searchSupportUsers,
+  updateSupportIncident,
+} from "../api/support";
 import { EmptyState } from "../components/EmptyState";
 import type {
   AuditLogSummary,
   DeploymentChecklist,
   DeploymentPreflight,
   DeploymentStatus,
+  DriverBooking,
+  Incident,
   JobsStatus,
   Payment,
   SupportUser,
@@ -26,6 +38,13 @@ function formatDate(value: string) {
   });
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return String(error.response?.data?.detail ?? fallback);
+  }
+  return fallback;
+}
+
 export function OperationsPage() {
   const [deployment, setDeployment] = useState<DeploymentStatus | null>(null);
   const [preflight, setPreflight] = useState<DeploymentPreflight | null>(null);
@@ -35,17 +54,24 @@ export function OperationsPage() {
   const [auditItems, setAuditItems] = useState<Awaited<ReturnType<typeof fetchMyAuditLogs>>["items"]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [supportUsers, setSupportUsers] = useState<SupportUser[]>([]);
+  const [driverVerifications, setDriverVerifications] = useState<SupportUser[]>([]);
+  const [supportIncidents, setSupportIncidents] = useState<Incident[]>([]);
+  const [supportPayments, setSupportPayments] = useState<Payment[]>([]);
+  const [supportBookings, setSupportBookings] = useState<DriverBooking[]>([]);
   const [searchEmail, setSearchEmail] = useState("");
   const [lookupId, setLookupId] = useState("");
   const [lookupUser, setLookupUser] = useState<SupportUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [supportNotice, setSupportNotice] = useState<string | null>(null);
+  const [busySupportAction, setBusySupportAction] = useState<string | null>(null);
 
   async function loadData() {
     setIsLoading(true);
     setError(null);
+    setSupportNotice(null);
     try {
-      const [status, nextPreflight, nextChecklist, nextJobs, summary, audit, paymentList, users] = await Promise.all([
+      const [status, nextPreflight, nextChecklist, nextJobs, summary, audit, paymentList] = await Promise.all([
         fetchDeploymentStatus(),
         fetchDeploymentPreflight(),
         fetchDeploymentChecklist(),
@@ -53,7 +79,6 @@ export function OperationsPage() {
         fetchMyAuditSummary(),
         fetchMyAuditLogs({ limit: 10 }),
         fetchMyPayments({ limit: 10 }),
-        searchSupportUsers(),
       ]);
       setDeployment(status);
       setPreflight(nextPreflight);
@@ -62,13 +87,35 @@ export function OperationsPage() {
       setAuditSummary(summary);
       setAuditItems(audit.items);
       setPayments(paymentList.items);
-      setSupportUsers(users.items);
+
+      const [users, verifications, incidents, adminPayments, adminBookings] = await Promise.allSettled([
+        searchSupportUsers(),
+        fetchPendingDriverVerifications({ limit: 5 }),
+        fetchSupportIncidents({ limit: 5 }),
+        fetchSupportPayments({ limit: 5 }),
+        fetchSupportBookings({ limit: 5 }),
+      ]);
+
+      if (users.status === "fulfilled") {
+        setSupportUsers(users.value.items);
+      }
+      if (verifications.status === "fulfilled") {
+        setDriverVerifications(verifications.value.items);
+      }
+      if (incidents.status === "fulfilled") {
+        setSupportIncidents(incidents.value.items);
+      }
+      if (adminPayments.status === "fulfilled") {
+        setSupportPayments(adminPayments.value.items);
+      }
+      if (adminBookings.status === "fulfilled") {
+        setSupportBookings(adminBookings.value.items);
+      }
+      if ([users, verifications, incidents, adminPayments, adminBookings].some((result) => result.status === "rejected")) {
+        setSupportNotice("Some support-only data is hidden for this account. Use a support/admin token to operate those queues.");
+      }
     } catch (loadError) {
-      setError(
-        axios.isAxiosError(loadError)
-          ? String(loadError.response?.data?.detail ?? "Unable to load operations data.")
-          : "Unable to load operations data.",
-      );
+      setError(getErrorMessage(loadError, "Unable to load operations data."));
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +142,12 @@ export function OperationsPage() {
       ) : null}
 
       {isLoading ? <div className="panel">Loading operational data...</div> : null}
+
+      {supportNotice ? (
+        <div className="form-alert success" role="status">
+          {supportNotice}
+        </div>
+      ) : null}
 
       {!isLoading && deployment && preflight && checklist && jobs ? (
         <div className="detail-grid">
@@ -211,10 +264,15 @@ export function OperationsPage() {
               <form
                 onSubmit={async (event) => {
                   event.preventDefault();
-                  const lookup = await searchSupportUsers(searchEmail || undefined);
-                  setSupportUsers(lookup.items);
-                  if (lookupId.trim()) {
-                    setLookupUser(await fetchSupportUser(Number(lookupId)));
+                  setSupportNotice(null);
+                  try {
+                    const lookup = await searchSupportUsers(searchEmail || undefined);
+                    setSupportUsers(lookup.items);
+                    if (lookupId.trim()) {
+                      setLookupUser(await fetchSupportUser(Number(lookupId)));
+                    }
+                  } catch (lookupError) {
+                    setSupportNotice(getErrorMessage(lookupError, "Support lookup is not available for this account."));
                   }
                 }}
               >
@@ -250,6 +308,202 @@ export function OperationsPage() {
                   ))}
                 </div>
               ) : null}
+            </div>
+
+            <div className="panel detail-info-card">
+              <span className="eyebrow">Driver verification queue</span>
+              {driverVerifications.length ? (
+                <div className="booking-board">
+                  {driverVerifications.map((driver) => (
+                    <article key={driver.id} className="booking-card">
+                      <div>
+                        <strong>{driver.full_name}</strong>
+                        <p>{driver.email}</p>
+                        <p>{driver.vehicle_plate_number || "Plate pending"}</p>
+                      </div>
+                      <div className="booking-actions">
+                        <span className="status-pill neutral-dark">{driver.driver_verification_status ?? "not_submitted"}</span>
+                        <div className="action-row">
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={busySupportAction === `approve-${driver.id}`}
+                            onClick={async () => {
+                              setBusySupportAction(`approve-${driver.id}`);
+                              setSupportNotice(null);
+                              try {
+                                await reviewDriverVerification(driver.id, { status: "approved" });
+                                await loadData();
+                              } catch (actionError) {
+                                setSupportNotice(getErrorMessage(actionError, "Unable to approve driver verification."));
+                              } finally {
+                                setBusySupportAction(null);
+                              }
+                            }}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={busySupportAction === `reject-${driver.id}`}
+                            onClick={async () => {
+                              setBusySupportAction(`reject-${driver.id}`);
+                              setSupportNotice(null);
+                              try {
+                                await reviewDriverVerification(driver.id, {
+                                  status: "rejected",
+                                  rejection_reason: "Documents need another review.",
+                                });
+                                await loadData();
+                              } catch (actionError) {
+                                setSupportNotice(getErrorMessage(actionError, "Unable to reject driver verification."));
+                              } finally {
+                                setBusySupportAction(null);
+                              }
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="No pending drivers" description="Driver verification requests appear here for support accounts." />
+              )}
+            </div>
+
+            <div className="panel detail-info-card">
+              <span className="eyebrow">Support incidents</span>
+              {supportIncidents.length ? (
+                <div className="booking-board">
+                  {supportIncidents.map((incident) => (
+                    <article key={incident.id} className="booking-card">
+                      <div>
+                        <strong>{incident.title}</strong>
+                        <p>{incident.severity} severity</p>
+                        <p>{formatDate(incident.created_at)}</p>
+                      </div>
+                      <div className="booking-actions">
+                        <span className="status-pill neutral-dark">{incident.status}</span>
+                        <div className="action-row">
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={busySupportAction === `incident-${incident.id}`}
+                            onClick={async () => {
+                              setBusySupportAction(`incident-${incident.id}`);
+                              setSupportNotice(null);
+                              try {
+                                await updateSupportIncident(incident.id, {
+                                  status: "investigating",
+                                  support_notes: "Support team is reviewing this incident.",
+                                });
+                                await loadData();
+                              } catch (actionError) {
+                                setSupportNotice(getErrorMessage(actionError, "Unable to update incident."));
+                              } finally {
+                                setBusySupportAction(null);
+                              }
+                            }}
+                          >
+                            Investigate
+                          </button>
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={busySupportAction === `resolve-${incident.id}`}
+                            onClick={async () => {
+                              setBusySupportAction(`resolve-${incident.id}`);
+                              setSupportNotice(null);
+                              try {
+                                await updateSupportIncident(incident.id, {
+                                  status: "resolved",
+                                  support_notes: "Resolved from support operations screen.",
+                                });
+                                await loadData();
+                              } catch (actionError) {
+                                setSupportNotice(getErrorMessage(actionError, "Unable to resolve incident."));
+                              } finally {
+                                setBusySupportAction(null);
+                              }
+                            }}
+                          >
+                            Resolve
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="No incidents" description="Passenger and driver safety reports will appear here." />
+              )}
+            </div>
+
+            <div className="panel detail-info-card">
+              <span className="eyebrow">Support payments</span>
+              {supportPayments.length ? (
+                <div className="booking-board">
+                  {supportPayments.map((payment) => (
+                    <article key={payment.id} className="booking-card">
+                      <div>
+                        <strong>Payment #{payment.id}</strong>
+                        <p>Booking #{payment.booking_id}</p>
+                        <p>{payment.currency} {payment.amount.toFixed(0)}</p>
+                      </div>
+                      <div className="booking-actions">
+                        <span className="status-pill neutral-dark">{payment.status}</span>
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          disabled={busySupportAction === `payment-${payment.id}`}
+                          onClick={async () => {
+                            setBusySupportAction(`payment-${payment.id}`);
+                            setSupportNotice(null);
+                            try {
+                              await reconcileSupportPayment(payment.id);
+                              await loadData();
+                            } catch (actionError) {
+                              setSupportNotice(getErrorMessage(actionError, "Unable to reconcile payment."));
+                            } finally {
+                              setBusySupportAction(null);
+                            }
+                          }}
+                        >
+                          Reconcile
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="No support payments" description="Admin payment records will appear here for authorized accounts." />
+              )}
+            </div>
+
+            <div className="panel detail-info-card">
+              <span className="eyebrow">Support bookings</span>
+              {supportBookings.length ? (
+                <div className="booking-board">
+                  {supportBookings.map((booking) => (
+                    <article key={booking.id} className="booking-card">
+                      <div>
+                        <strong>
+                          {booking.ride.origin} to {booking.ride.destination}
+                        </strong>
+                        <p>Passenger {booking.passenger.full_name}</p>
+                        <p>{formatDate(booking.created_at)}</p>
+                      </div>
+                      <span className="status-pill neutral-dark">{booking.status}</span>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="No support bookings" description="Admin booking records will appear here for support accounts." />
+              )}
             </div>
           </div>
         </div>

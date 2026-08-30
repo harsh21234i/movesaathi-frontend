@@ -2,8 +2,11 @@ import { api } from "./client";
 import type {
   Booking,
   BookingDetail,
+  BookingShareRevoke,
+  BookingShareToken,
   DriverBooking,
   PassengerBooking,
+  PublicTripStatus,
   User,
   UserRole,
 } from "../types";
@@ -40,5 +43,20 @@ export async function issueBoardingOtp(bookingId: number) {
 
 export async function verifyBoardingOtp(bookingId: number, otp: string) {
   const { data } = await api.post<Booking>(`/bookings/${bookingId}/boarding/verify`, { otp });
+  return data;
+}
+
+export async function createBookingShare(bookingId: number) {
+  const { data } = await api.post<BookingShareToken>(`/bookings/${bookingId}/share`);
+  return data;
+}
+
+export async function revokeBookingShare(bookingId: number) {
+  const { data } = await api.delete<BookingShareRevoke>(`/bookings/${bookingId}/share`);
+  return data;
+}
+
+export async function fetchPublicTripStatus(token: string) {
+  const { data } = await api.get<PublicTripStatus>(`/bookings/share/${token}`);
   return data;
 }

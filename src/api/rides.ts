@@ -51,6 +51,11 @@ export async function cancelRide(rideId: number) {
   await api.delete(`/rides/${rideId}`);
 }
 
+export async function completeRide(rideId: number) {
+  const { data } = await api.post<Ride>(`/rides/${rideId}/complete`);
+  return data;
+}
+
 export async function createBooking(rideId: number, notes?: string) {
   const { data } = await api.post<{ id: number }>("/bookings", { ride_id: rideId, notes });
   return data;

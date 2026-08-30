@@ -2010,6 +2010,46 @@ textarea {
   }
 }
 
+.share-link-card {
+  display: grid;
+  gap: 0.35rem;
+  overflow-wrap: anywhere;
+  padding: 0.9rem;
+  border: 1px solid rgba(21, 31, 43, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(242, 196, 87, 0.14), rgba(37, 99, 235, 0.08));
+}
+
+.share-link-card small {
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.share-link-card strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.incident-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.public-trip-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.2), transparent 36rem),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 34rem),
+    var(--bg);
+}
+
+.public-trip-hero {
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 1280px) {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
