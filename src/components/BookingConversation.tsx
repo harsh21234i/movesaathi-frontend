@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { suggestChatReplyWithAI } from "../api/ai";
 import { getWebsocketBaseUrl } from "../api/client";
 import { fetchMessages, markMessagesSeen, sendMessage } from "../api/chat";
+import { AIResultMeta } from "./AIResultMeta";
 import { useNotifications } from "../context/NotificationsContext";
 import type { AIChatSuggestionIntent, ChatEvent, Message, User } from "../types";
 
@@ -68,6 +69,13 @@ export function BookingConversation({
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestionNotes, setSuggestionNotes] = useState<string[]>([]);
+  const [suggestionMeta, setSuggestionMeta] = useState<{
+    provider: string;
+    model: string;
+    usedFallback: boolean;
+    tone: string;
+    summary: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
@@ -315,6 +323,7 @@ export function BookingConversation({
                 setIsSuggesting(true);
                 setError(null);
                 setSuggestionNotes([]);
+                setSuggestionMeta(null);
                 try {
                   const response = await suggestChatReplyWithAI({
                     booking_id: bookingId,
@@ -323,6 +332,13 @@ export function BookingConversation({
                   });
                   setDraft(response.result.suggestion);
                   setSuggestionNotes(response.result.safety_notes);
+                  setSuggestionMeta({
+                    provider: response.provider,
+                    model: response.model,
+                    usedFallback: response.used_fallback,
+                    tone: response.result.tone,
+                    summary: response.booking_summary,
+                  });
                   if (response.result.should_warn) {
                     pushToast({
                       title: "Sensitive draft warning",
@@ -345,12 +361,15 @@ export function BookingConversation({
             </button>
           ))}
         </div>
-        {suggestionNotes.length ? (
-          <ul className="ai-note-list" aria-label="AI chat safety notes">
-            {suggestionNotes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
+        {suggestionMeta ? (
+          <AIResultMeta
+            provider={suggestionMeta.provider}
+            model={suggestionMeta.model}
+            usedFallback={suggestionMeta.usedFallback}
+            tone={suggestionMeta.tone}
+            summary={suggestionMeta.summary}
+            safetyNotes={suggestionNotes}
+          />
         ) : null}
       </div>
 

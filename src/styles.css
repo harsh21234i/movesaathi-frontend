@@ -733,6 +733,126 @@ textarea {
   color: var(--muted);
 }
 
+.ai-result-meta {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(31, 122, 91, 0.16);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(31, 122, 91, 0.12), transparent 42%),
+    rgba(255, 253, 248, 0.78);
+}
+
+.ai-meta-header {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ai-hub-hero {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(239, 125, 56, 0.22), transparent 30%),
+    radial-gradient(circle at 85% 10%, rgba(47, 100, 150, 0.2), transparent 32%),
+    linear-gradient(135deg, rgba(255, 253, 248, 0.92), rgba(234, 244, 255, 0.88));
+}
+
+.ai-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ai-playground-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.ai-playground-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ai-playground-card,
+.ai-output-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.68);
+}
+
+.ai-json-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.ai-json-summary div {
+  padding: 0.8rem;
+  border-radius: 16px;
+  background: rgba(234, 244, 255, 0.76);
+}
+
+.ai-json-summary dt {
+  margin-bottom: 0.25rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-json-summary dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.ai-suggestion-preview {
+  margin: 0;
+  padding: 1rem;
+  border-left: 4px solid var(--accent);
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.ai-capability-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+}
+
+.ai-architecture-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.ai-architecture-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.ai-architecture-steps > div {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 253, 248, 0.7);
+}
+
+.ai-architecture-steps strong {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
 .ai-note-list {
   margin: 0;
   padding-left: 1.15rem;
@@ -2068,6 +2188,12 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ai-hub-grid,
+  .ai-playground-grid,
+  .ai-architecture-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .search-panel,
   .ride-form-panel,
   .trust-panel {
@@ -2137,7 +2263,11 @@ textarea {
   .chat-ride-summary,
   .payment-steps,
   .payment-reference-grid,
-  .payment-action-panel {
+  .payment-action-panel,
+  .ai-hub-grid,
+  .ai-playground-grid,
+  .ai-json-summary,
+  .ai-architecture-steps {
     grid-template-columns: 1fr;
   }
 
