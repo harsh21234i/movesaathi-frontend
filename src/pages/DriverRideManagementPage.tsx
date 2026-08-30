@@ -121,6 +121,9 @@ export function DriverRideManagementPage() {
                         type="button"
                         disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
                         onClick={async () => {
+                          if (!window.confirm("Cancel this ride? Passengers will no longer be able to use this departure.")) {
+                            return;
+                          }
                           setBusyRideId(ride.id);
                           setError(null);
                           try {
@@ -145,6 +148,9 @@ export function DriverRideManagementPage() {
                         type="button"
                         disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
                         onClick={async () => {
+                          if (!window.confirm("Complete this ride? Accepted passengers must already be boarded.")) {
+                            return;
+                          }
                           setBusyRideId(ride.id);
                           setError(null);
                           try {

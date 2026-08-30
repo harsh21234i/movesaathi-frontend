@@ -342,6 +342,9 @@ export function BookingDetailPage() {
                   type="button"
                   disabled={isCancelling}
                   onClick={async () => {
+                    if (!window.confirm("Cancel this booking request? This cannot be undone from this screen.")) {
+                      return;
+                    }
                     setIsCancelling(true);
                     try {
                       await cancelMyBooking(booking.id);
@@ -446,6 +449,9 @@ export function BookingDetailPage() {
                   type="button"
                   disabled={isSharing}
                   onClick={async () => {
+                    if (!window.confirm("Revoke this public trip share link? Anyone with the current link will lose access.")) {
+                      return;
+                    }
                     setIsSharing(true);
                     setShareError(null);
                     try {

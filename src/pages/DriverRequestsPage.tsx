@@ -262,6 +262,9 @@ export function DriverRequestsPage() {
                 if (!presence) {
                   return;
                 }
+                if (!window.confirm("Go offline now? You will stop receiving nearby passenger requests.")) {
+                  return;
+                }
                 void updatePresence({
                   isOnline: false,
                   latitude: presence.latitude,
@@ -364,6 +367,9 @@ export function DriverRequestsPage() {
                       type="button"
                       disabled={decliningRequestId === request.id || activeRequestId === request.id}
                       onClick={async () => {
+                        if (!window.confirm("Decline this pickup request? It will be removed from your queue.")) {
+                          return;
+                        }
                         setDecliningRequestId(request.id);
                         setError(null);
                         try {

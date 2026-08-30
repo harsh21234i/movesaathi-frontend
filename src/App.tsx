@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { ApiStatusBanner } from "./components/ApiStatusBanner";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
@@ -40,43 +41,62 @@ function RouteFallback() {
   );
 }
 
+function NotFoundPage() {
+  return (
+    <div className="screen-state">
+      <div className="state-card route-error-card">
+        <span className="eyebrow">Page not found</span>
+        <h2>This route does not exist</h2>
+        <p>Return to your active MooveSaathi workspace and continue from a known flow.</p>
+        <a className="primary-button inline-link-button" href="/">
+          Back to dashboard
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { token } = useAuth();
 
   return (
-    <RouteErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
-          <Route path="/register" element={token ? <Navigate to="/" replace /> : <RegisterPage />} />
-          <Route path="/forgot-password" element={token ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
-          <Route path="/reset-password" element={token ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
-          <Route path="/verify-email" element={token ? <Navigate to="/" replace /> : <VerifyEmailPage />} />
-          <Route path="/share/:shareToken" element={<PublicTripPage />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<DashboardPage />} />
-            <Route path="rides/:rideId" element={<RideDetailPage />} />
-            <Route path="ai" element={<AIHubPage />} />
-            <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
-            <Route path="chat/:bookingId" element={<ChatPage />} />
-            <Route path="request-ride" element={<PassengerRequestPage />} />
-            <Route path="driver/rides" element={<DriverRideManagementPage />} />
-            <Route path="driver/requests" element={<DriverRequestsPage />} />
-            <Route path="trips" element={<PassengerTripsPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="account" element={<AccountPage />} />
-            <Route path="sessions" element={<SessionsPage />} />
-            <Route path="ops" element={<OperationsPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </RouteErrorBoundary>
+    <>
+      <ApiStatusBanner />
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+            <Route path="/register" element={token ? <Navigate to="/" replace /> : <RegisterPage />} />
+            <Route path="/forgot-password" element={token ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
+            <Route path="/reset-password" element={token ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
+            <Route path="/verify-email" element={token ? <Navigate to="/" replace /> : <VerifyEmailPage />} />
+            <Route path="/share/:shareToken" element={<PublicTripPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="rides/:rideId" element={<RideDetailPage />} />
+              <Route path="ai" element={<AIHubPage />} />
+              <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
+              <Route path="chat/:bookingId" element={<ChatPage />} />
+              <Route path="request-ride" element={<PassengerRequestPage />} />
+              <Route path="driver/rides" element={<DriverRideManagementPage />} />
+              <Route path="driver/requests" element={<DriverRequestsPage />} />
+              <Route path="trips" element={<PassengerTripsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="account" element={<AccountPage />} />
+              <Route path="sessions" element={<SessionsPage />} />
+              <Route path="ops" element={<OperationsPage />} />
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </RouteErrorBoundary>
+    </>
   );
 }

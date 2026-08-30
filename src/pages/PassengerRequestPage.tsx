@@ -258,6 +258,9 @@ export function PassengerRequestPage() {
                       type="button"
                       disabled={activeRequestId === request.id}
                       onClick={async () => {
+                        if (!window.confirm("Cancel this live pickup request? Nearby drivers will stop seeing it.")) {
+                          return;
+                        }
                         setActiveRequestId(request.id);
                         setError(null);
                         try {
