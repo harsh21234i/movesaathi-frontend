@@ -74,6 +74,7 @@ export type Booking = {
   passenger_id: number;
   status: "pending" | "accepted" | "rejected" | "cancelled_by_passenger" | "cancelled_by_driver" | "completed";
   notes?: string | null;
+  boarded_at?: string | null;
   created_at: string;
 };
 
@@ -299,16 +300,21 @@ export type JobsStatus = {
   failed_email_jobs: JobEvent[];
 };
 
+export type PaymentStatus = "pending" | "authorized" | "captured" | "cancelled" | "refunded" | "failed";
+export type PaymentProvider = "mock" | "razorpay" | string;
+
 export type Payment = {
   id: number;
   booking_id: number;
   payer_id: number;
   amount: number;
+  amount_minor: number;
   currency: string;
-  status: string;
-  provider: string;
-  provider_payment_id: string;
-  provider_client_secret: string | null;
+  status: PaymentStatus;
+  provider: PaymentProvider;
+  provider_order_id: string;
+  provider_payment_id: string | null;
+  checkout_key_id: string | null;
   failure_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -374,3 +380,70 @@ export type Review = {
   comment: string | null;
   created_at: string;
 };
+
+export type DriverPresence = {
+  id: number;
+  driver_id: number;
+  latitude: number;
+  longitude: number;
+  heading?: number | null;
+  is_online: boolean;
+  updated_at: string;
+};
+
+export type RideRequestStatus = "open" | "matched" | "cancelled" | "expired";
+
+export type RideRequest = {
+  id: number;
+  passenger_id: number;
+  origin: string;
+  destination: string;
+  origin_latitude: number;
+  origin_longitude: number;
+  destination_latitude: number;
+  destination_longitude: number;
+  requested_departure_time: string;
+  notes?: string | null;
+  status: RideRequestStatus;
+  matched_driver_id: number | null;
+  matched_ride_id: number | null;
+  matched_booking_id: number | null;
+  created_at: string;
+};
+
+export type NearbyRideRequest = RideRequest & {
+  distance_km: number;
+};
+
+export type DispatchAcceptance = {
+  request: RideRequest;
+  ride_id: number;
+  booking_id: number;
+  estimated_price_per_seat: number;
+};
+
+export type DispatchEvent =
+  | {
+      event_type: "nearby_request_created";
+      request: RideRequest;
+      distance_km: number;
+    }
+  | {
+      event_type: "nearby_request_removed";
+      request_id: number;
+      reason: "matched" | "cancelled" | "expired" | "declined";
+    }
+  | {
+      event_type: "request_matched";
+      request: RideRequest;
+      ride_id: number;
+      booking_id: number;
+      estimated_price_per_seat: number;
+    }
+  | {
+      event_type: "request_cancelled" | "request_expired";
+      request: RideRequest;
+    }
+  | {
+      event_type: "pong";
+    };
