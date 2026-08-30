@@ -77,3 +77,16 @@ api.interceptors.response.use(
 export function getWebsocketBaseUrl() {
   return env.wsUrl.replace(/\/$/, "");
 }
+
+export async function checkApiHealth() {
+  const baseUrl = env.apiUrl.replace(/\/api\/v1\/?$/, "");
+  const { data } = await axios.get<{
+    status: string;
+    service: string;
+    environment: string;
+    request_id?: string;
+  }>(`${baseUrl}/health`, {
+    timeout: 5000,
+  });
+  return data;
+}

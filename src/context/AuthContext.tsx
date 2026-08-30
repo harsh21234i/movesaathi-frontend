@@ -107,10 +107,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.data);
         }
       } catch {
-        clearStoredSession();
-        if (!cancelled) {
-          setSessionState({ accessToken: null, refreshToken: null });
-          setUser(null);
+        if (!session.refreshToken) {
+          clearStoredSession();
+          if (!cancelled) {
+            setSessionState({ accessToken: null, refreshToken: null });
+            setUser(null);
+          }
+          return;
+        }
+
+        try {
+          const nextTokens = await refreshSession(session.refreshToken);
+          writeStoredSession(nextTokens);
+          if (!cancelled) {
+            setSessionState({
+              accessToken: nextTokens.access_token,
+              refreshToken: nextTokens.refresh_token,
+            });
+          }
+          const response = await api.get<User>("/users/me", {
+            headers: {
+              Authorization: `Bearer ${nextTokens.access_token}`,
+            },
+          });
+          if (!cancelled) {
+            setUser(response.data);
+          }
+        } catch {
+          clearStoredSession();
+          if (!cancelled) {
+            setSessionState({ accessToken: null, refreshToken: null });
+            setUser(null);
+          }
         }
       } finally {
         if (!cancelled) {
