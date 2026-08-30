@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-import { fetchSessions, revokeSession } from "../api/auth";
+import { fetchSessions, revokeOtherSessions, revokeSession } from "../api/auth";
 import { EmptyState } from "../components/EmptyState";
 import type { SessionSummary } from "../types";
 
@@ -19,6 +19,7 @@ export function SessionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyJti, setBusyJti] = useState<string | null>(null);
+  const [isRevokingOthers, setIsRevokingOthers] = useState(false);
 
   async function loadSessions() {
     setIsLoading(true);
@@ -49,6 +50,29 @@ export function SessionsPage() {
           <h2>Account session management</h2>
           <p>Review active refresh sessions and revoke any device you no longer trust.</p>
         </div>
+        <button
+          className="primary-button"
+          type="button"
+          disabled={isRevokingOthers}
+          onClick={async () => {
+            setIsRevokingOthers(true);
+            setError(null);
+            try {
+              await revokeOtherSessions();
+              await loadSessions();
+            } catch (revokeError) {
+              setError(
+                axios.isAxiosError(revokeError)
+                  ? String(revokeError.response?.data?.detail ?? "Unable to revoke other sessions.")
+                  : "Unable to revoke other sessions.",
+              );
+            } finally {
+              setIsRevokingOthers(false);
+            }
+          }}
+        >
+          {isRevokingOthers ? "Revoking..." : "Revoke other sessions"}
+        </button>
       </div>
 
       {error ? (

@@ -2,7 +2,15 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { cancelMyBooking, fetchBookingDetail, issueBoardingOtp, verifyBoardingOtp } from "../api/bookings";
+import {
+  cancelMyBooking,
+  createBookingShare,
+  fetchBookingDetail,
+  issueBoardingOtp,
+  revokeBookingShare,
+  verifyBoardingOtp,
+} from "../api/bookings";
+import { createIncident } from "../api/incidents";
 import { createPayment, confirmPayment, fetchBookingPayment, reconcilePayment } from "../api/payments";
 import { createReview } from "../api/reviews";
 import { BookingConversation } from "../components/BookingConversation";
@@ -12,7 +20,7 @@ import { PaymentLifecyclePanel } from "../components/PaymentLifecyclePanel";
 import { StatusTimeline } from "../components/StatusTimeline";
 import { useAuth } from "../context/AuthContext";
 import { openRazorpayCheckout } from "../services/razorpayCheckout";
-import type { BookingDetail } from "../types";
+import type { BookingDetail, IncidentSeverity } from "../types";
 import type { Payment } from "../types";
 
 export function BookingDetailPage() {
@@ -31,6 +39,12 @@ export function BookingDetailPage() {
   const [boardingInput, setBoardingInput] = useState("");
   const [boardingError, setBoardingError] = useState<string | null>(null);
   const [isBoardingActionPending, setIsBoardingActionPending] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [incidentError, setIncidentError] = useState<string | null>(null);
+  const [incidentMessage, setIncidentMessage] = useState<string | null>(null);
+  const [isReportingIncident, setIsReportingIncident] = useState(false);
 
   useEffect(() => {
     if (!bookingId || !user) {
@@ -111,6 +125,8 @@ export function BookingDetailPage() {
       </section>
     );
   }
+
+  const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : null;
 
   async function refreshPayment() {
     if (!bookingId) {
@@ -374,6 +390,157 @@ export function BookingDetailPage() {
           {booking.status === "accepted" ? (
             <LiveLocationPanel rideId={booking.ride.id} canUpdate={user?.role === "driver" && booking.ride.driver_id === user.id} />
           ) : null}
+          <div className="panel detail-info-card">
+            <span className="eyebrow">Trip sharing</span>
+            <h3>Share live trip status</h3>
+            <p>Create a public safety link with route, booking status, and visible driver location when tracking is allowed.</p>
+            {shareError ? (
+              <div className="form-alert error" role="alert">
+                {shareError}
+              </div>
+            ) : null}
+            {shareUrl ? (
+              <div className="share-link-card" aria-live="polite">
+                <small>Public trip link</small>
+                <strong>{shareUrl}</strong>
+              </div>
+            ) : null}
+            <div className="action-row">
+              <button
+                className="primary-button"
+                type="button"
+                disabled={isSharing}
+                onClick={async () => {
+                  setIsSharing(true);
+                  setShareError(null);
+                  try {
+                    const response = await createBookingShare(booking.id);
+                    setShareToken(response.token);
+                  } catch (shareActionError) {
+                    setShareError(
+                      axios.isAxiosError(shareActionError)
+                        ? String(shareActionError.response?.data?.detail ?? "Unable to create trip share link.")
+                        : "Unable to create trip share link.",
+                    );
+                  } finally {
+                    setIsSharing(false);
+                  }
+                }}
+              >
+                {isSharing ? "Preparing..." : shareToken ? "Refresh link" : "Create share link"}
+              </button>
+              {shareUrl ? (
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(shareUrl);
+                  }}
+                >
+                  Copy link
+                </button>
+              ) : null}
+              {shareToken ? (
+                <button
+                  className="ghost-button"
+                  type="button"
+                  disabled={isSharing}
+                  onClick={async () => {
+                    setIsSharing(true);
+                    setShareError(null);
+                    try {
+                      await revokeBookingShare(booking.id);
+                      setShareToken(null);
+                    } catch (shareActionError) {
+                      setShareError(
+                        axios.isAxiosError(shareActionError)
+                          ? String(shareActionError.response?.data?.detail ?? "Unable to revoke trip share link.")
+                          : "Unable to revoke trip share link.",
+                      );
+                    } finally {
+                      setIsSharing(false);
+                    }
+                  }}
+                >
+                  Revoke
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="panel detail-info-card">
+            <span className="eyebrow">Safety</span>
+            <h3>Report a trip issue</h3>
+            <p>Use this for pickup problems, unsafe behavior, route disputes, or urgent support follow-up.</p>
+            <form
+              className="incident-form"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setIncidentError(null);
+                setIncidentMessage(null);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
+
+                setIsReportingIncident(true);
+                try {
+                  await createIncident({
+                    booking_id: booking.id,
+                    ride_id: booking.ride.id,
+                    title: String(formData.get("title") ?? "").trim(),
+                    description: String(formData.get("description") ?? "").trim(),
+                    severity: String(formData.get("severity") ?? "medium") as IncidentSeverity,
+                  });
+                  form.reset();
+                  setIncidentMessage("Support incident created. The operations team can now review it.");
+                } catch (incidentActionError) {
+                  setIncidentError(
+                    axios.isAxiosError(incidentActionError)
+                      ? String(incidentActionError.response?.data?.detail ?? "Unable to report incident.")
+                      : "Unable to report incident.",
+                  );
+                } finally {
+                  setIsReportingIncident(false);
+                }
+              }}
+            >
+              <div className="input-group">
+                <label htmlFor="incident-title">Issue title</label>
+                <input id="incident-title" name="title" minLength={4} placeholder="Driver late at pickup" required />
+              </div>
+              <div className="input-group">
+                <label htmlFor="incident-severity">Severity</label>
+                <select id="incident-severity" name="severity" defaultValue="medium" required>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="emergency">Emergency</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label htmlFor="incident-description">What happened?</label>
+                <textarea
+                  id="incident-description"
+                  name="description"
+                  minLength={10}
+                  rows={4}
+                  placeholder="Add location, time, and clear context for support."
+                  required
+                />
+              </div>
+              {incidentMessage ? (
+                <div className="form-alert success" role="status">
+                  {incidentMessage}
+                </div>
+              ) : null}
+              {incidentError ? (
+                <div className="form-alert error" role="alert">
+                  {incidentError}
+                </div>
+              ) : null}
+              <button className="primary-button" type="submit" disabled={isReportingIncident}>
+                {isReportingIncident ? "Submitting..." : "Report issue"}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
