@@ -29,6 +29,7 @@ export function RideDetailPage() {
   const { pushToast } = useNotifications();
   const [ride, setRide] = useState<RideDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const [isRequesting, setIsRequesting] = useState(false);
 
   useEffect(() => {
@@ -104,6 +105,7 @@ export function RideDetailPage() {
               type="button"
               onClick={async () => {
                 setIsRequesting(true);
+                setRequestError(null);
                 try {
                   const booking = await createBooking(ride.id);
                   pushToast({
@@ -112,10 +114,10 @@ export function RideDetailPage() {
                     tone: "success",
                   });
                   navigate(`/bookings/${booking.id}`);
-                } catch (requestError) {
-                  setError(
-                    axios.isAxiosError(requestError)
-                      ? String(requestError.response?.data?.detail ?? "Unable to request this ride.")
+                } catch (bookingRequestError) {
+                  setRequestError(
+                    axios.isAxiosError(bookingRequestError)
+                      ? String(bookingRequestError.response?.data?.detail ?? "Unable to request this ride.")
                       : "Unable to request this ride.",
                   );
                 } finally {
@@ -130,6 +132,11 @@ export function RideDetailPage() {
               Manage this ride
             </Link>
           )}
+          {requestError ? (
+            <div className="form-alert error" role="alert">
+              {requestError}
+            </div>
+          ) : null}
         </div>
       </div>
 
