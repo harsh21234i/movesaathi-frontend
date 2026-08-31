@@ -352,7 +352,8 @@ export function DriverRequestsPage() {
                     <span>Pickup {formatCompactDate(request.requested_departure_time)}</span>
                     <span>{request.distance_km.toFixed(1)} km away</span>
                   </div>
-                  {request.notes ? <p>{request.notes}</p> : null}
+                  <p>Accepting creates a private booking where payment, chat, OTP boarding, and tracking continue.</p>
+                  {request.notes ? <p>Passenger note: {request.notes}</p> : null}
                 </div>
                 <div className="booking-actions">
                   <span className="status-pill neutral-dark">open</span>

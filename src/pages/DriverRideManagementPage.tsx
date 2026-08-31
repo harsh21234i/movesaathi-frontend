@@ -70,6 +70,10 @@ export function DriverRideManagementPage() {
       return accumulator;
     }, {});
   }, [managedBookings]);
+  const selectedRideBookings = selectedRide ? (bookingsByRide[selectedRide.id] ?? []) : [];
+  const selectedAcceptedCount = selectedRideBookings.filter((booking) => booking.status === "accepted").length;
+  const selectedPendingCount = selectedRideBookings.filter((booking) => booking.status === "pending").length;
+  const selectedBoardedCount = selectedRideBookings.filter((booking) => booking.boarded_at).length;
 
   return (
     <section className="detail-stack">
@@ -254,19 +258,30 @@ export function DriverRideManagementPage() {
               <div className="panel detail-info-card">
                 <span className="eyebrow">Passengers</span>
                 <h3>Ride manifest</h3>
+                <div className="profile-tags">
+                  <span className="status-pill neutral-dark">{selectedRideBookings.length} total</span>
+                  <span className="status-pill success">{selectedAcceptedCount} accepted</span>
+                  <span className="status-pill neutral-dark">{selectedPendingCount} pending</span>
+                  <span className="status-pill neutral-dark">{selectedBoardedCount} boarded</span>
+                </div>
                 <div className="passenger-list">
-                  {(bookingsByRide[selectedRide.id] ?? []).map((booking) => (
+                  {selectedRideBookings.map((booking) => (
                     <div key={booking.id} className="passenger-list-item">
                       <div>
                         <strong>{booking.passenger.full_name}</strong>
                         <p>{booking.passenger.email}</p>
                       </div>
-                      <span className={`status-pill ${booking.status === "accepted" ? "success" : booking.status === "rejected" ? "warning" : "neutral-dark"}`}>
-                        {booking.status}
-                      </span>
+                      <div className="booking-actions">
+                        <span className={`status-pill ${booking.status === "accepted" ? "success" : booking.status === "rejected" ? "warning" : "neutral-dark"}`}>
+                          {booking.status}
+                        </span>
+                        <Link className="ghost-button inline-link-button" to={`/bookings/${booking.id}`}>
+                          Open booking
+                        </Link>
+                      </div>
                     </div>
                   ))}
-                  {!(bookingsByRide[selectedRide.id] ?? []).length ? (
+                  {!selectedRideBookings.length ? (
                     <EmptyState
                       title="No passengers yet"
                       description="Passenger requests will appear here as soon as people start booking this ride."

@@ -10,6 +10,25 @@ import type { PassengerBooking } from "../types";
 
 type TripTab = "upcoming" | "pending" | "completed";
 
+function getTripHelper(booking: PassengerBooking) {
+  if (booking.status === "pending") {
+    return "Waiting for the driver decision. Open booking to create payment, chat, or cancel.";
+  }
+  if (booking.status === "accepted") {
+    return "Driver accepted. Use booking detail for payment status, chat, live location, and boarding OTP.";
+  }
+  if (booking.status === "completed") {
+    return "Trip completed. Open booking to review the driver or check final payment status.";
+  }
+  if (booking.status === "cancelled_by_passenger") {
+    return "You cancelled this booking. It stays here for history and support context.";
+  }
+  if (booking.status === "cancelled_by_driver") {
+    return "Driver cancelled this booking. Check payment/refund status if you had authorized money.";
+  }
+  return "Driver rejected this request. You can explore another ride or send a dispatch request.";
+}
+
 export function PassengerTripsPage() {
   const { pushToast } = useNotifications();
   const { confirm, ConfirmDialog } = useConfirmAction();
@@ -71,6 +90,16 @@ export function PassengerTripsPage() {
       (booking) => booking.status === "accepted" && new Date(booking.ride.departure_time).getTime() >= now,
     );
   }, [bookings, tab]);
+  const upcomingCount = bookings.filter(
+    (booking) => booking.status === "accepted" && new Date(booking.ride.departure_time).getTime() >= Date.now(),
+  ).length;
+  const pendingCount = bookings.filter((booking) => booking.status === "pending").length;
+  const completedCount = bookings.length - upcomingCount - pendingCount;
+  const tabCounts: Record<TripTab, number> = {
+    upcoming: upcomingCount,
+    pending: pendingCount,
+    completed: completedCount,
+  };
 
   return (
     <section className="detail-stack">
@@ -94,6 +123,7 @@ export function PassengerTripsPage() {
               onClick={() => setTab(candidate)}
             >
               {candidate}
+              <span className="tab-count">{tabCounts[candidate]}</span>
             </button>
           ))}
         </div>
@@ -113,6 +143,7 @@ export function PassengerTripsPage() {
                 </strong>
                 <p>{new Date(booking.ride.departure_time).toLocaleString()}</p>
                 <p>Fare: Rs. {booking.ride.price_per_seat.toFixed(0)}</p>
+                <p>{getTripHelper(booking)}</p>
               </div>
               <div className="booking-actions">
                 <span className={`status-pill ${booking.status === "accepted" ? "success" : booking.status === "pending" ? "neutral-dark" : "warning"}`}>

@@ -24,6 +24,86 @@ import { openRazorpayCheckout } from "../services/razorpayCheckout";
 import type { BookingDetail, IncidentSeverity } from "../types";
 import type { Payment } from "../types";
 
+function getJourneyGuide(booking: BookingDetail, payment: Payment | null, role?: string) {
+  if (booking.status === "rejected") {
+    return {
+      title: "Booking was rejected",
+      description: "This request is closed. The passenger should request another ride or send a new dispatch request.",
+    };
+  }
+
+  if (booking.status === "cancelled_by_passenger" || booking.status === "cancelled_by_driver") {
+    return {
+      title: "Booking was cancelled",
+      description: "This trip is no longer active. Check payment/refund status if money was already authorized.",
+    };
+  }
+
+  if (booking.status === "completed") {
+    return {
+      title: "Trip completed",
+      description: "The ride is closed. Submit a review so future riders and drivers can trust the platform.",
+    };
+  }
+
+  if (booking.boarded_at) {
+    return {
+      title: "Passenger boarded",
+      description: role === "driver"
+        ? "Passenger OTP is verified. Continue the ride and complete it from the driver workflow when finished."
+        : "Your OTP was verified. Stay in chat/location tracking until the trip is completed.",
+    };
+  }
+
+  if (booking.status === "accepted") {
+    return {
+      title: "Driver accepted",
+      description: role === "driver"
+        ? "Ask the passenger for the six-digit boarding OTP before letting them sit in the vehicle."
+        : "Meet the driver, generate the boarding OTP, and share it only when you are physically at pickup.",
+    };
+  }
+
+  if (!payment) {
+    return {
+      title: role === "driver" ? "Waiting for passenger payment" : "Create payment first",
+      description: role === "driver"
+        ? "Do not accept until payment is visible or the passenger confirms they are paying from their booking screen."
+        : "Create and authorize payment so the driver can confidently accept this request.",
+    };
+  }
+
+  if (payment.status === "pending") {
+    return {
+      title: "Payment order is ready",
+      description: role === "passenger"
+        ? "Finish checkout now. The driver should wait until payment becomes authorized."
+        : "Payment is created but not authorized yet. Ask the passenger to complete checkout.",
+    };
+  }
+
+  if (payment.status === "authorized") {
+    return {
+      title: role === "driver" ? "Safe to accept" : "Waiting for driver acceptance",
+      description: role === "driver"
+        ? "Passenger payment is authorized. Accepting this booking should move the payment toward capture."
+        : "Payment is authorized. Wait for the driver to accept, then use OTP at pickup.",
+    };
+  }
+
+  if (payment.status === "captured") {
+    return {
+      title: "Payment captured",
+      description: "Payment is complete. Continue with pickup, OTP boarding, live location, chat, and trip completion.",
+    };
+  }
+
+  return {
+    title: "Payment needs attention",
+    description: "Payment is not in a usable state. Refresh status or contact support before continuing this trip.",
+  };
+}
+
 export function BookingDetailPage() {
   const { bookingId } = useParams();
   const { token, user } = useAuth();
@@ -155,6 +235,7 @@ export function BookingDetailPage() {
   }
 
   const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : null;
+  const journeyGuide = getJourneyGuide(booking, payment, user?.role);
 
   async function refreshBooking() {
     if (!bookingId || !user) {
@@ -261,6 +342,19 @@ export function BookingDetailPage() {
 
       <div className="detail-grid">
         <div className="detail-main-column">
+          <div className="panel detail-info-card">
+            <span className="eyebrow">Next step</span>
+            <h3>{journeyGuide.title}</h3>
+            <p>{journeyGuide.description}</p>
+            <div className="profile-tags">
+              <span className="status-pill neutral-dark">Booking {booking.status}</span>
+              <span className={`status-pill ${payment?.status === "authorized" || payment?.status === "captured" ? "success" : "neutral-dark"}`}>
+                Payment {payment?.status ?? "not started"}
+              </span>
+              {booking.boarded_at ? <span className="status-pill success">OTP verified</span> : <span className="status-pill neutral-dark">OTP pending</span>}
+            </div>
+          </div>
+
           <div className="panel detail-info-card">
             <span className="eyebrow">Ride info</span>
             <div className="detail-metric-grid">

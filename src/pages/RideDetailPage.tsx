@@ -22,6 +22,25 @@ function formatDeparture(value: string) {
   });
 }
 
+function getRideAvailabilityCopy(ride: RideDetail, isDriverView: boolean, hasExistingBooking: boolean) {
+  if (hasExistingBooking) {
+    return "You already have a booking for this ride. Continue from booking detail for payment, chat, and OTP.";
+  }
+  if (isDriverView) {
+    return "This is your published ride. Manage passengers, location, cancellation, and completion from driver ride management.";
+  }
+  if (!ride.is_active || ride.status === "cancelled") {
+    return "This ride is no longer accepting booking requests.";
+  }
+  if (ride.status === "completed") {
+    return "This ride has already completed.";
+  }
+  if (ride.available_seats <= 0 || ride.status === "full") {
+    return "This ride is full. Explore another route or send a nearby pickup request.";
+  }
+  return "Request this ride first. After the driver accepts, continue with payment status, chat, live location, and OTP boarding.";
+}
+
 export function RideDetailPage() {
   const { rideId } = useParams();
   const navigate = useNavigate();
@@ -77,6 +96,15 @@ export function RideDetailPage() {
 
   const isDriverView = user?.role === "driver" && ride.driver_id === user.id;
   const hasExistingBooking = Boolean(ride.booking_id);
+  const canRequestRide =
+    !isDriverView &&
+    !hasExistingBooking &&
+    ride.is_active &&
+    ride.status !== "cancelled" &&
+    ride.status !== "completed" &&
+    ride.status !== "full" &&
+    ride.available_seats > 0;
+  const availabilityCopy = getRideAvailabilityCopy(ride, isDriverView, hasExistingBooking);
 
   return (
     <section className="detail-stack">
@@ -92,6 +120,7 @@ export function RideDetailPage() {
             <span className="status-pill neutral-dark">Fare Rs. {ride.price_per_seat.toFixed(0)}</span>
             <span className="status-pill neutral-dark">{hasExistingBooking ? "Booking active" : "Open for booking"}</span>
           </div>
+          <p>{availabilityCopy}</p>
         </div>
         <div className="detail-hero-actions">
           {hasExistingBooking ? (
@@ -101,9 +130,13 @@ export function RideDetailPage() {
           ) : !isDriverView ? (
             <button
               className="primary-button"
-              disabled={isRequesting}
+              disabled={isRequesting || !canRequestRide}
               type="button"
               onClick={async () => {
+                if (!canRequestRide) {
+                  setRequestError(availabilityCopy);
+                  return;
+                }
                 setIsRequesting(true);
                 setRequestError(null);
                 try {
@@ -125,7 +158,7 @@ export function RideDetailPage() {
                 }
               }}
             >
-              {isRequesting ? "Requesting..." : "Request this ride"}
+              {isRequesting ? "Requesting..." : canRequestRide ? "Request this ride" : "Ride unavailable"}
             </button>
           ) : (
             <Link className="ghost-button inline-link-button" to="/driver/rides">
