@@ -8,6 +8,7 @@ import { EmptyState } from "../components/EmptyState";
 import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { RideForm } from "../components/RideForm";
 import { useNotifications } from "../context/NotificationsContext";
+import { useConfirmAction } from "../hooks/useConfirmAction";
 import type { DriverBooking, Ride } from "../types";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -40,6 +41,7 @@ function optionalCoordinate(formData: FormData, key: string) {
 
 export function DriverRideManagementPage() {
   const { pushToast } = useNotifications();
+  const { confirm, ConfirmDialog } = useConfirmAction();
   const [rides, setRides] = useState<Ride[]>([]);
   const [managedBookings, setManagedBookings] = useState<DriverBooking[]>([]);
   const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
@@ -121,7 +123,13 @@ export function DriverRideManagementPage() {
                         type="button"
                         disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
                         onClick={async () => {
-                          if (!window.confirm("Cancel this ride? Passengers will no longer be able to use this departure.")) {
+                          const confirmed = await confirm({
+                            title: "Cancel this ride?",
+                            description: "Passengers will no longer be able to use this departure and active requests may be affected.",
+                            confirmLabel: "Cancel ride",
+                            tone: "danger",
+                          });
+                          if (!confirmed) {
                             return;
                           }
                           setBusyRideId(ride.id);
@@ -148,7 +156,13 @@ export function DriverRideManagementPage() {
                         type="button"
                         disabled={!ride.is_active || ride.status === "completed" || busyRideId === ride.id}
                         onClick={async () => {
-                          if (!window.confirm("Complete this ride? Accepted passengers must already be boarded.")) {
+                          const confirmed = await confirm({
+                            title: "Complete this ride?",
+                            description: "Accepted passengers must already be boarded. Completion finalizes booking and payment lifecycle state.",
+                            confirmLabel: "Complete ride",
+                            tone: "warning",
+                          });
+                          if (!confirmed) {
                             return;
                           }
                           setBusyRideId(ride.id);
@@ -269,6 +283,7 @@ export function DriverRideManagementPage() {
           )}
         </div>
       </div>
+      {ConfirmDialog}
     </section>
   );
 }

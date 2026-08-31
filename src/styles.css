@@ -1667,6 +1667,39 @@ textarea {
   backdrop-filter: blur(12px);
 }
 
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(14, 20, 31, 0.58);
+  backdrop-filter: blur(12px);
+}
+
+.confirm-dialog {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 28px;
+  background: var(--surface-strong);
+  box-shadow: 0 28px 70px rgba(9, 12, 20, 0.28);
+}
+
+.confirm-dialog.danger {
+  border-color: rgba(166, 60, 60, 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(166, 60, 60, 0.14), transparent 46%),
+    var(--surface-strong);
+}
+
+.confirm-dialog p {
+  color: var(--muted);
+}
+
 .map-modal {
   width: min(1180px, 100%);
   max-height: min(88vh, 980px);
@@ -2401,5 +2434,29 @@ textarea {
   .ai-chip-row {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .confirm-dialog-backdrop {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .confirm-dialog {
+    border-radius: 26px 26px 20px 20px;
+  }
+
+  .map-preview,
+  .map-preview .interactive-map-surface {
+    min-height: 320px;
+  }
+
+  .map-legend {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-control-wide {
+    width: 100%;
+    justify-content: center;
   }
 }

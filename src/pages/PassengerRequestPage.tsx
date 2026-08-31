@@ -7,6 +7,7 @@ import { DispatchRequestForm } from "../components/DispatchRequestForm";
 import { EmptyState } from "../components/EmptyState";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationsContext";
+import { useConfirmAction } from "../hooks/useConfirmAction";
 import type { RideRequest } from "../types";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -38,6 +39,7 @@ function getRequestTone(status: RideRequest["status"]) {
 export function PassengerRequestPage() {
   const { token } = useAuth();
   const { pushToast } = useNotifications();
+  const { confirm, ConfirmDialog } = useConfirmAction();
   const [requests, setRequests] = useState<RideRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -258,7 +260,13 @@ export function PassengerRequestPage() {
                       type="button"
                       disabled={activeRequestId === request.id}
                       onClick={async () => {
-                        if (!window.confirm("Cancel this live pickup request? Nearby drivers will stop seeing it.")) {
+                        const confirmed = await confirm({
+                          title: "Cancel this live pickup request?",
+                          description: "Nearby drivers will stop seeing it and you will need to send a new request if you still need a ride.",
+                          confirmLabel: "Cancel request",
+                          tone: "danger",
+                        });
+                        if (!confirmed) {
                           return;
                         }
                         setActiveRequestId(request.id);
@@ -303,6 +311,7 @@ export function PassengerRequestPage() {
           </div>
         </div>
       </div>
+      {ConfirmDialog}
     </section>
   );
 }

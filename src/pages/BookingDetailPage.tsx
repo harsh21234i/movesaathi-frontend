@@ -19,6 +19,7 @@ import { LiveLocationPanel } from "../components/LiveLocationPanel";
 import { PaymentLifecyclePanel } from "../components/PaymentLifecyclePanel";
 import { StatusTimeline } from "../components/StatusTimeline";
 import { useAuth } from "../context/AuthContext";
+import { useConfirmAction } from "../hooks/useConfirmAction";
 import { openRazorpayCheckout } from "../services/razorpayCheckout";
 import type { BookingDetail, IncidentSeverity } from "../types";
 import type { Payment } from "../types";
@@ -26,6 +27,7 @@ import type { Payment } from "../types";
 export function BookingDetailPage() {
   const { bookingId } = useParams();
   const { token, user } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirmAction();
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -342,7 +344,13 @@ export function BookingDetailPage() {
                   type="button"
                   disabled={isCancelling}
                   onClick={async () => {
-                    if (!window.confirm("Cancel this booking request? This cannot be undone from this screen.")) {
+                    const confirmed = await confirm({
+                      title: "Cancel this booking?",
+                      description: "The driver will lose this request and you will need to book again if plans change.",
+                      confirmLabel: "Cancel booking",
+                      tone: "danger",
+                    });
+                    if (!confirmed) {
                       return;
                     }
                     setIsCancelling(true);
@@ -449,7 +457,13 @@ export function BookingDetailPage() {
                   type="button"
                   disabled={isSharing}
                   onClick={async () => {
-                    if (!window.confirm("Revoke this public trip share link? Anyone with the current link will lose access.")) {
+                    const confirmed = await confirm({
+                      title: "Revoke trip share link?",
+                      description: "Anyone with the current public safety link will lose access immediately.",
+                      confirmLabel: "Revoke link",
+                      tone: "warning",
+                    });
+                    if (!confirmed) {
                       return;
                     }
                     setIsSharing(true);
@@ -623,6 +637,7 @@ export function BookingDetailPage() {
           </form>
         </div>
       ) : null}
+      {ConfirmDialog}
     </section>
   );
 }
