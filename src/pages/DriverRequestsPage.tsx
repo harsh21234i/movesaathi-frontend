@@ -7,6 +7,7 @@ import { EmptyState } from "../components/EmptyState";
 import { MapPreview } from "../components/MapPreview";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationsContext";
+import { useConfirmAction } from "../hooks/useConfirmAction";
 import type { DriverPresence, NearbyRideRequest } from "../types";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -29,6 +30,7 @@ export function DriverRequestsPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { pushToast } = useNotifications();
+  const { confirm, ConfirmDialog } = useConfirmAction();
   const [presence, setPresence] = useState<DriverPresence | null>(null);
   const [nearbyRequests, setNearbyRequests] = useState<NearbyRideRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -258,11 +260,17 @@ export function DriverRequestsPage() {
               className="ghost-button"
               type="button"
               disabled={!presence}
-              onClick={() => {
+              onClick={async () => {
                 if (!presence) {
                   return;
                 }
-                if (!window.confirm("Go offline now? You will stop receiving nearby passenger requests.")) {
+                const confirmed = await confirm({
+                  title: "Go offline now?",
+                  description: "You will stop receiving nearby passenger requests until you share your location again.",
+                  confirmLabel: "Go offline",
+                  tone: "warning",
+                });
+                if (!confirmed) {
                   return;
                 }
                 void updatePresence({
@@ -367,7 +375,13 @@ export function DriverRequestsPage() {
                       type="button"
                       disabled={decliningRequestId === request.id || activeRequestId === request.id}
                       onClick={async () => {
-                        if (!window.confirm("Decline this pickup request? It will be removed from your queue.")) {
+                        const confirmed = await confirm({
+                          title: "Decline this pickup request?",
+                          description: "This request will be removed from your queue, but other nearby drivers may still accept it.",
+                          confirmLabel: "Decline request",
+                          tone: "warning",
+                        });
+                        if (!confirmed) {
                           return;
                         }
                         setDecliningRequestId(request.id);
@@ -406,6 +420,7 @@ export function DriverRequestsPage() {
           </div>
         </div>
       </div>
+      {ConfirmDialog}
     </section>
   );
 }
