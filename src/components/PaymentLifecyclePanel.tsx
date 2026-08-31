@@ -80,7 +80,7 @@ function getRoleCopy(booking: BookingDetail, payment: Payment | null, role?: str
       return "This booking was rejected, so no payment flow is available.";
     }
     return role === "driver"
-      ? "The passenger has not created a payment yet. You can review the booking, but should wait for authorization before accepting."
+      ? "No passenger payment is visible yet. Ask the passenger to create and authorize payment before you accept the booking."
       : "Secure your seat by creating a payment order. The amount is only captured after the driver accepts.";
   }
 
@@ -98,7 +98,7 @@ function getRoleCopy(booking: BookingDetail, payment: Payment | null, role?: str
     }
     return booking.status === "pending"
       ? "Payment authorized. The amount will be captured when the driver accepts your booking."
-      : "Payment authorized. Capture is being finalized.";
+      : "Payment authorized. Refresh status after driver acceptance; the backend will show captured once finalization completes.";
   }
 
   if (payment.status === "captured") {
@@ -130,7 +130,7 @@ export function PaymentLifecyclePanel({
   const role = user?.role;
   const canCreatePayment = !payment && booking.status !== "rejected" && role === "passenger";
   const canConfirmPayment = payment?.status === "pending" && role === "passenger";
-  const showRefresh = Boolean(payment);
+  const showRefresh = Boolean(payment) || ["pending", "accepted"].includes(booking.status);
   const statusLabel = payment ? payment.status : booking.status === "rejected" ? "not available" : "not started";
   const lifecycleCopy = getRoleCopy(booking, payment, role);
   const isPositiveStatus = payment?.status === "authorized" || payment?.status === "captured";
@@ -223,7 +223,7 @@ export function PaymentLifecyclePanel({
           ) : null}
           {showRefresh ? (
             <button className="ghost-button" type="button" onClick={() => void onRefreshPayment()}>
-              Refresh status
+              Refresh payment status
             </button>
           ) : null}
         </div>
