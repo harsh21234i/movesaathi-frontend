@@ -36,6 +36,19 @@ function getRequestTone(status: RideRequest["status"]) {
   return "neutral-dark";
 }
 
+function getRequestHelper(request: RideRequest) {
+  if (request.status === "open") {
+    return "Waiting in the nearby-driver queue. Keep this page open or check back from Trips.";
+  }
+  if (request.status === "matched") {
+    return "A driver accepted this request. Open the booking to handle payment, chat, OTP, and tracking.";
+  }
+  if (request.status === "cancelled") {
+    return "You cancelled this request. Send a new pickup request if you still need a ride.";
+  }
+  return "This request expired because the requested pickup time passed before a driver matched.";
+}
+
 export function PassengerRequestPage() {
   const { token } = useAuth();
   const { pushToast } = useNotifications();
@@ -250,7 +263,8 @@ export function PassengerRequestPage() {
                     <span>Pickup {formatCompactDate(request.requested_departure_time)}</span>
                     <span>Sent {formatCompactDate(request.created_at)}</span>
                   </div>
-                  {request.notes ? <p>{request.notes}</p> : null}
+                  <p>{getRequestHelper(request)}</p>
+                  {request.notes ? <p>Note: {request.notes}</p> : null}
                 </div>
                 <div className="booking-actions">
                   <span className={`status-pill ${getRequestTone(request.status)}`}>{request.status}</span>
