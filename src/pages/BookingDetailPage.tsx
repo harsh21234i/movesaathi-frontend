@@ -103,6 +103,32 @@ export function BookingDetailPage() {
     return () => window.clearInterval(intervalId);
   }, [bookingId]);
 
+  useEffect(() => {
+    if (!bookingId || !user) {
+      return;
+    }
+
+    const refreshVisibleBooking = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      void fetchBookingDetail(Number(bookingId), user.role, user).then(setBooking).catch(() => undefined);
+      void fetchBookingPayment(Number(bookingId)).then(setPayment).catch((loadError) => {
+        if (axios.isAxiosError(loadError) && loadError.response?.status === 404) {
+          setPayment(null);
+        }
+      });
+    };
+
+    document.addEventListener("visibilitychange", refreshVisibleBooking);
+    window.addEventListener("focus", refreshVisibleBooking);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshVisibleBooking);
+      window.removeEventListener("focus", refreshVisibleBooking);
+    };
+  }, [bookingId, user]);
+
   if (!bookingId) {
     return null;
   }

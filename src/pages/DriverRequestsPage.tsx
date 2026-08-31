@@ -34,6 +34,7 @@ export function DriverRequestsPage() {
   const [presence, setPresence] = useState<DriverPresence | null>(null);
   const [nearbyRequests, setNearbyRequests] = useState<NearbyRideRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isPresenceLoading, setIsPresenceLoading] = useState(true);
   const [isLocating, setIsLocating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
@@ -74,9 +75,11 @@ export function DriverRequestsPage() {
 
   useEffect(() => {
     if (!token) {
+      setIsPresenceLoading(false);
       return;
     }
 
+    setIsPresenceLoading(true);
     void fetchDriverPresence()
       .then((storedPresence) => {
         setPresence(storedPresence);
@@ -90,6 +93,9 @@ export function DriverRequestsPage() {
           return;
         }
         setError(getErrorMessage(loadError, "Unable to restore driver online status."));
+      })
+      .finally(() => {
+        setIsPresenceLoading(false);
       });
   }, [token]);
 
@@ -154,6 +160,8 @@ export function DriverRequestsPage() {
     return () => window.clearInterval(intervalId);
   }, [presence?.is_online, pushToast]);
 
+  const presenceStatusLabel = isPresenceLoading ? "Restoring..." : presence?.is_online ? "Online" : "Offline";
+
   return (
     <section className="dashboard-stack" aria-label="Driver nearby dispatch requests">
       <div className="hero-panel panel dispatch-hero">
@@ -166,7 +174,7 @@ export function DriverRequestsPage() {
         <div className="metric-grid dispatch-metric-grid" aria-label="Driver dispatch metrics">
           <article className="metric-card">
             <span>Driver mode</span>
-            <strong>{presence?.is_online ? "Online" : "Offline"}</strong>
+            <strong>{presenceStatusLabel}</strong>
             <small>request discovery only works while sharing your position</small>
           </article>
           <article className="metric-card">
@@ -205,7 +213,7 @@ export function DriverRequestsPage() {
           <div className="detail-metric-grid">
             <div>
               <small>Current state</small>
-              <strong>{presence?.is_online ? "Online" : "Offline"}</strong>
+              <strong>{presenceStatusLabel}</strong>
             </div>
             <div>
               <small>Latitude</small>
@@ -221,7 +229,7 @@ export function DriverRequestsPage() {
             <button
               className="primary-button"
               type="button"
-              disabled={isLocating}
+              disabled={isLocating || isPresenceLoading}
               onClick={() => {
                 if (!navigator.geolocation) {
                   setError("This browser cannot provide live location. Use a location-enabled browser to go online.");
@@ -259,7 +267,7 @@ export function DriverRequestsPage() {
             <button
               className="ghost-button"
               type="button"
-              disabled={!presence}
+              disabled={!presence || isPresenceLoading}
               onClick={async () => {
                 if (!presence) {
                   return;
@@ -294,8 +302,12 @@ export function DriverRequestsPage() {
             />
           ) : (
             <div className="info-card">
-              <strong>Location is not shared yet</strong>
-              <p>Use the button above to publish your current position, otherwise nearby passenger requests cannot be ranked for you.</p>
+              <strong>{isPresenceLoading ? "Restoring saved driver presence" : "Location is not shared yet"}</strong>
+              <p>
+                {isPresenceLoading
+                  ? "Checking the backend before showing your online/offline state."
+                  : "Use the button above to publish your current position, otherwise nearby passenger requests cannot be ranked for you."}
+              </p>
             </div>
           )}
 
