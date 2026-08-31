@@ -130,6 +130,13 @@ export function BookingDetailPage() {
 
   const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : null;
 
+  async function refreshBooking() {
+    if (!bookingId || !user) {
+      return;
+    }
+    setBooking(await fetchBookingDetail(Number(bookingId), user.role, user));
+  }
+
   async function refreshPayment() {
     if (!bookingId) {
       return;
@@ -160,6 +167,7 @@ export function BookingDetailPage() {
     try {
       const createdPayment = await createPayment({ booking_id: booking.id });
       setPayment(createdPayment);
+      await refreshBooking();
       await refreshPayment();
     } catch (createError) {
       setPaymentError(
@@ -191,6 +199,7 @@ export function BookingDetailPage() {
       } else {
         await confirmPayment(payment.id);
       }
+      await refreshBooking();
       await refreshPayment();
     } catch (confirmError) {
       setPaymentError(
@@ -303,7 +312,7 @@ export function BookingDetailPage() {
                       setBoardingError(null);
                       try {
                         await verifyBoardingOtp(booking.id, boardingInput);
-                        setBooking(await fetchBookingDetail(Number(bookingId), user.role, user));
+                        await refreshBooking();
                         setBoardingInput("");
                       } catch (boardingActionError) {
                         setBoardingError(
@@ -356,7 +365,7 @@ export function BookingDetailPage() {
                     setIsCancelling(true);
                     try {
                       await cancelMyBooking(booking.id);
-                      setBooking(await fetchBookingDetail(Number(bookingId), user.role, user));
+                      await refreshBooking();
                     } catch (cancelError) {
                       setError(
                         axios.isAxiosError(cancelError)

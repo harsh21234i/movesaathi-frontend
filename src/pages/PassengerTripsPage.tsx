@@ -5,12 +5,14 @@ import { Link } from "react-router-dom";
 import { cancelMyBooking, fetchMyBookings } from "../api/bookings";
 import { EmptyState } from "../components/EmptyState";
 import { useNotifications } from "../context/NotificationsContext";
+import { useConfirmAction } from "../hooks/useConfirmAction";
 import type { PassengerBooking } from "../types";
 
 type TripTab = "upcoming" | "pending" | "completed";
 
 export function PassengerTripsPage() {
   const { pushToast } = useNotifications();
+  const { confirm, ConfirmDialog } = useConfirmAction();
   const [bookings, setBookings] = useState<PassengerBooking[]>([]);
   const [tab, setTab] = useState<TripTab>("upcoming");
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +127,15 @@ export function PassengerTripsPage() {
                     type="button"
                     disabled={busyBookingId === booking.id}
                     onClick={async () => {
+                      const confirmed = await confirm({
+                        title: "Cancel this booking?",
+                        description: "The driver will lose this request and you will need to book again if plans change.",
+                        confirmLabel: "Cancel booking",
+                        tone: "danger",
+                      });
+                      if (!confirmed) {
+                        return;
+                      }
                       setBusyBookingId(booking.id);
                       setError(null);
                       try {
@@ -170,6 +181,7 @@ export function PassengerTripsPage() {
           />
         ) : null}
       </div>
+      {ConfirmDialog}
     </section>
   );
 }
